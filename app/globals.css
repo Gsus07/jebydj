@@ -1,26 +1,129 @@
 @import "tailwindcss";
 
+/* ─── Custom breakpoint: xs ──────────────────────────────────────────────── */
+@theme {
+  --breakpoint-xs: 480px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #0a0a0f;
+  --bg-surface: #111118;
+  --bg-card: #1a1a24;
+  --accent-cyan: #00f5ff;
+  --accent-magenta: #ff006e;
+  --accent-amber: #ffbe0b;
+  --text-primary: #e8e8f0;
+  --text-muted: #555566;
+  --border: #2a2a3a;
+  --glow-cyan: 0 0 20px rgba(0,245,255,0.4);
+  --glow-magenta: 0 0 20px rgba(255,0,110,0.4);
+
+  /* ─── Fluid typography ─────────────────────────────────────────────────── */
+  --font-size-display: clamp(12px, 2vw, 20px);
+  --font-size-label:   clamp(9px, 1.2vw, 13px);
+  --font-size-body:    clamp(11px, 1.5vw, 14px);
+  --font-size-micro:   clamp(8px, 1vw, 11px);
+
+  /* ─── Fluid component sizes ────────────────────────────────────────────── */
+  --knob-size:     clamp(32px, 4vw, 56px);
+  --button-size:   clamp(32px, 4vw, 48px);
+  --fader-height:  clamp(80px, 12vh, 160px);
+  --plate-size:    clamp(120px, 15vw, 220px);
+
+  /* ─── Mobile tab bar ───────────────────────────────────────────────────── */
+  --mobile-tab-height: 56px;
+  --mobile-header-height: 44px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--text-primary);
+  --color-muted: var(--text-muted);
+  --color-card: var(--bg-card);
+  --color-surface: var(--bg-surface);
+  --color-border: var(--border);
+  --color-accent-cyan: var(--accent-cyan);
+  --color-accent-magenta: var(--accent-magenta);
+  --color-accent-amber: var(--accent-amber);
+  --font-orbitron: var(--font-orbitron);
+  --font-rajdhani: var(--font-rajdhani);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow: hidden;
+  /* Prevent double-tap zoom on mobile */
+  touch-action: manipulation;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Rajdhani', system-ui, sans-serif;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #444455; }
+
+/* Range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--bg-card);
+  height: 4px;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--text-primary);
+  cursor: pointer;
+  margin-top: -8px;
+  border: 1px solid var(--border);
+}
+input[type="range"]::-moz-range-track {
+  background: var(--bg-card);
+  height: 4px;
+  border-radius: 2px;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 20px;
+  border-radius: 3px;
+  background: var(--text-primary);
+  cursor: pointer;
+  border: 1px solid var(--border);
+}
+
+/* Vertical slider workaround for Firefox */
+input[type="range"][style*="vertical-lr"] {
+  writing-mode: vertical-lr;
+}
+
+/* Text selection */
+::selection {
+  background: rgba(0, 245, 255, 0.3);
 }
