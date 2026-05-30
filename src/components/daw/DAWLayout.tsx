@@ -32,9 +32,11 @@ export default function DAWLayout() {
   const [libCollapsed, setLibCollapsed] = useState(false);
   const [drumOpen, setDrumOpen] = useState(false);
 
-  // Collapse library by default on narrow viewports
+  // Collapse library by default on narrow/landscape-mobile viewports
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
+    const mq = window.matchMedia(
+      '(max-width: 767px), (max-height: 500px) and (orientation: landscape)',
+    );
     if (mq.matches) setLibCollapsed(true);
     const handler = (e: MediaQueryListEvent) => { if (e.matches) setLibCollapsed(true); };
     mq.addEventListener('change', handler);
@@ -104,7 +106,7 @@ export default function DAWLayout() {
     >
       {/* Sub-header: view tabs + project info */}
       <div
-        className="flex flex-wrap items-center gap-1 px-2 min-h-8 shrink-0 border-b"
+        className="daw-hscroll daw-subheader flex items-center gap-1 px-2 min-h-8 shrink-0 border-b"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', paddingTop: 2, paddingBottom: 2 }}
       >
         {/* View tabs */}
@@ -189,7 +191,7 @@ export default function DAWLayout() {
       <TransportBar />
 
       {/* Main area: left library + right content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
 
         {/* Left library panel */}
         <div
@@ -251,23 +253,31 @@ export default function DAWLayout() {
 
         {/* Right: main view + bottom panels */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          {/* Main view */}
-          <div className="flex-1 overflow-hidden">
+          {/* Main view — shrinks when bottom panels open */}
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {view === 'arrangement' ? <ArrangementView /> : <ClipLauncher />}
           </div>
 
           {/* Drum Machine (collapsible bottom panel) */}
           {drumOpen && (
-            <div className="shrink-0 border-t" style={{ borderColor: 'var(--border)' }}>
+            <div className="shrink-0 border-t overflow-y-auto" style={{ borderColor: 'var(--border)', maxHeight: '40vh' }}>
               <DrumMachine dawMode />
             </div>
           )}
 
           {/* Piano Roll (collapsible bottom panel) */}
-          {pianoRollOpen && <PianoRoll />}
+          {pianoRollOpen && (
+            <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+              <PianoRoll />
+            </div>
+          )}
 
           {/* Mixer (collapsible bottom panel) */}
-          {mixerOpen && <DAWMixer />}
+          {mixerOpen && (
+            <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+              <DAWMixer />
+            </div>
+          )}
         </div>
       </div>
 

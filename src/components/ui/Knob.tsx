@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 interface KnobProps {
@@ -12,6 +12,8 @@ interface KnobProps {
   minAngle?: number; // degrees
   maxAngle?: number; // degrees
   disabled?: boolean;
+  /** Force slider mode regardless of device type */
+  forceSlider?: boolean;
 }
 
 export function Knob({
@@ -23,10 +25,17 @@ export function Knob({
   minAngle = -135,
   maxAngle = 135,
   disabled = false,
+  forceSlider = false,
 }: KnobProps) {
   const isDragging = useRef(false);
   const startY = useRef(0);
   const startValue = useRef(value);
+
+  // Detect touch device (only client-side)
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   const angle = minAngle + value * (maxAngle - minAngle);
   const radius = size / 2 - 3;
@@ -107,6 +116,37 @@ export function Knob({
     onChange(Math.max(0, Math.min(1, value + delta)));
   }, [value, onChange, disabled]);
 
+  // ─── Touch slider mode ──────────────────────────────────────────────────
+  if (isTouch || forceSlider) {
+    return (
+      <div className="flex flex-col items-center gap-0.5 select-none" style={{ minWidth: size }}>
+        <input
+          type="range"
+          min="0"
+          max="1000"
+          value={Math.round(value * 1000)}
+          onChange={(e) => onChange(Number(e.target.value) / 1000)}
+          disabled={disabled}
+          style={{
+            accentColor: color,
+            width: Math.max(size + 8, 60),
+            opacity: disabled ? 0.4 : 1,
+            cursor: disabled ? 'not-allowed' : 'pointer',
+          }}
+        />
+        {label && (
+          <span className="text-[9px] font-rajdhani uppercase tracking-wider" style={{ color: disabled ? '#555566' : color }}>
+            {label}
+          </span>
+        )}
+        <span className="text-[8px] font-orbitron" style={{ color: '#555566' }}>
+          {Math.round(value * 100)}
+        </span>
+      </div>
+    );
+  }
+
+  // ─── Desktop SVG knob ───────────────────────────────────────────────────
   return (
     <div className="flex flex-col items-center gap-1 select-none">
       <motion.div
@@ -207,3 +247,4 @@ export function Knob({
     </div>
   );
 }
+

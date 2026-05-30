@@ -117,12 +117,12 @@ export default function TransportBar() {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-2 px-3 py-1.5 shrink-0 border-b select-none"
+      className="daw-hscroll flex items-center gap-2 px-3 py-1.5 shrink-0 border-b select-none"
       style={{
         background: 'var(--bg-surface)',
         borderColor: 'var(--border)',
         fontFamily: 'var(--font-rajdhani)',
-        minHeight: 48,
+        minHeight: 'var(--h-daw-transport, 48px)',
       }}
     >
       {/* Undo / Redo */}

@@ -29,6 +29,7 @@ import { SetPlanner } from '@/src/components/planner/SetPlanner';
 import { PracticeMode } from '@/src/components/practice/PracticeMode';
 import { CamelotWheel } from '@/src/components/library/CamelotWheel';
 import { MobileControllerModal } from '@/src/components/controller/MobileControllerModal';
+const VisualEngine = dynamic(() => import('@/src/components/visual/VisualEngine').then((m) => ({ default: m.VisualEngine })), { ssr: false });
 
 export default function DJApp() {
   useAudioEngine();
@@ -42,6 +43,7 @@ export default function DJApp() {
   const { setShowSettings, setActiveDeck, setPracticeActive } = useDJStore.getState();
 
   const [mode, setMode] = useState<'dj' | 'daw'>('dj');
+  const [showVisual, setShowVisual] = useState(false);
   const [libTab, setLibTab] = useState<'tracks' | 'samples'>('tracks');
   const drumMachineOpen = useSampleStore((s) => s.drumMachineOpen);
   const setDrumMachineOpen = (v: boolean) => useSampleStore.getState().setDrumMachineOpen(v);
@@ -53,7 +55,10 @@ export default function DJApp() {
   // Responsive: detect narrow viewport
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
+    // Portrait mobile  OR  landscape phone (touch device with low viewport height)
+    const mq = window.matchMedia(
+      '(max-width: 767px), (hover: none) and (pointer: coarse) and (max-height: 500px)',
+    );
     setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener('change', handler);
@@ -117,37 +122,41 @@ export default function DJApp() {
     >
       {/* ── HEADER ── */}
       <header
-        className="flex items-center gap-2 px-3 py-1.5 border-b flex-shrink-0"
-        style={{ borderColor: '#2a2a3a', backgroundColor: '#0d0d14', minHeight: isMobile ? 44 : 48 }}
+        className="app-header flex flex-wrap items-center gap-x-2 gap-y-1 px-3 py-1.5 border-b flex-shrink-0"
+        style={{ borderColor: '#2a2a3a', backgroundColor: '#0d0d14' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <span className="font-orbitron font-black" style={{ fontSize: isMobile ? 14 : 20, color: '#00f5ff', textShadow: '0 0 16px rgba(0,245,255,0.6)' }}>JEBY</span>
-          <span className="font-orbitron font-black" style={{ fontSize: isMobile ? 14 : 20, color: '#ff006e', textShadow: '0 0 16px rgba(255,0,110,0.6)' }}>DJ</span>
+        {/* Row 1: Logo + Mode toggles + Settings */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Logo */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <span className="font-orbitron font-black text-sm md:text-lg" style={{ color: '#00f5ff', textShadow: '0 0 16px rgba(0,245,255,0.6)' }}>JEBY</span>
+            <span className="font-orbitron font-black text-sm md:text-lg" style={{ color: '#ff006e', textShadow: '0 0 16px rgba(255,0,110,0.6)' }}>DJ</span>
+          </div>
+
+          {/* Active deck — hide on mobile */}
+          {!isMobile && (
+            <div className="flex gap-1">
+              {(['A', 'B'] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setActiveDeck(d)}
+                  className="text-[9px] font-orbitron font-bold rounded border transition-all"
+                  style={{
+                    width: 24, height: 24, minHeight: 24,
+                    borderColor: activeDeck === d ? (d === 'A' ? '#00f5ff' : '#ff006e') : '#2a2a3a',
+                    color: activeDeck === d ? (d === 'A' ? '#00f5ff' : '#ff006e') : '#555566',
+                    backgroundColor: activeDeck === d ? (d === 'A' ? '#00f5ff22' : '#ff006e22') : 'transparent',
+                  }}
+                >
+                  {d}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Active deck — hide on mobile (controlled inside MobileDJLayout) */}
-        {!isMobile && (
-          <div className="flex gap-1 flex-shrink-0">
-            {(['A', 'B'] as const).map((d) => (
-              <button
-                key={d}
-                onClick={() => setActiveDeck(d)}
-                className="text-[9px] font-orbitron font-bold w-6 h-6 rounded border transition-all"
-                style={{
-                  borderColor: activeDeck === d ? (d === 'A' ? '#00f5ff' : '#ff006e') : '#2a2a3a',
-                  color: activeDeck === d ? (d === 'A' ? '#00f5ff' : '#ff006e') : '#555566',
-                  backgroundColor: activeDeck === d ? (d === 'A' ? '#00f5ff22' : '#ff006e22') : 'transparent',
-                }}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* DJ / DAW mode toggle */}
-        <div className="flex gap-1 flex-shrink-0 ml-1">
+        {/* Mode toggles */}
+        <div className="flex gap-1 flex-shrink-0">
           <button
             onClick={() => setMode('dj')}
             className="flex items-center gap-1 px-2 py-1 rounded border text-[9px] font-orbitron transition-all"
@@ -155,9 +164,10 @@ export default function DJApp() {
               borderColor: mode === 'dj' ? '#00f5ff' : '#2a2a3a',
               color: mode === 'dj' ? '#00f5ff' : '#555566',
               backgroundColor: mode === 'dj' ? '#00f5ff11' : 'transparent',
+              minHeight: 28,
             }}
           >
-            <Music2 size={10} />{!isMobile && 'DJ'}
+            <Music2 size={10} />DJ
           </button>
           <button
             onClick={() => setMode('daw')}
@@ -166,47 +176,63 @@ export default function DJApp() {
               borderColor: mode === 'daw' ? '#ff006e' : '#2a2a3a',
               color: mode === 'daw' ? '#ff006e' : '#555566',
               backgroundColor: mode === 'daw' ? '#ff006e11' : 'transparent',
+              minHeight: 28,
             }}
           >
-            <Layers size={10} />{!isMobile && 'DAW'}
+            <Layers size={10} />DAW
+          </button>
+          <button
+            onClick={() => setShowVisual((v) => !v)}
+            className="flex items-center gap-1 px-2 py-1 rounded border text-[9px] font-orbitron transition-all"
+            style={{
+              borderColor: showVisual ? '#a855f7' : '#2a2a3a',
+              color: showVisual ? '#a855f7' : '#555566',
+              backgroundColor: showVisual ? '#a855f711' : 'transparent',
+              minHeight: 28,
+            }}
+          >
+            <Grid3X3 size={10} />VFX
           </button>
         </div>
 
-        {/* Spectrum — smaller on mobile */}
-        <div className="flex-1 min-w-0 mx-1">
-          <SpectrumAnalyzer height={isMobile ? 24 : 32} mode="dual" />
+        {/* Spectrum — hidden on xs, flex-1 on md+ */}
+        <div className="hidden md:block flex-1 min-w-0 mx-1">
+          <SpectrumAnalyzer height={28} mode="dual" />
+        </div>
+        {/* Spectrum on xs-sm (own row) — hidden in landscape compact */}
+        <div className="app-header-spectrum-mobile md:hidden w-full order-last">
+          <SpectrumAnalyzer height={20} mode="dual" />
         </div>
 
         {/* Recording */}
-        {!isMobile && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {isRecording ? (
-              <>
-                <DisplayNumber value={formatRecTime(recTime)} color="#ff0000" size="sm" label="REC" />
-                <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-2 h-2 rounded-full bg-red-500" />
-                <button onClick={handleStopRecording} className="flex items-center gap-1 px-2 py-1 rounded border border-red-500 text-red-400 text-[10px] font-rajdhani hover:bg-red-950">
-                  <Download size={11} />STOP
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={handleStartRecording}
-                disabled={!isAudioReady}
-                className="flex items-center gap-1 px-2 py-1 rounded border border-[#2a2a3a] text-muted text-[10px] font-rajdhani hover:border-red-500 hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Circle size={11} />REC
+        <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+          {isRecording ? (
+            <>
+              <DisplayNumber value={formatRecTime(recTime)} color="#ff0000" size="sm" label="REC" />
+              <motion.div animate={{ opacity: [1, 0.2, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-2 h-2 rounded-full bg-red-500" />
+              <button onClick={handleStopRecording} className="flex items-center gap-1 px-2 py-1 rounded border border-red-500 text-red-400 text-[10px] font-rajdhani hover:bg-red-950" style={{ minHeight: 28 }}>
+                <Download size={11} />STOP
               </button>
-            )}
-          </div>
-        )}
+            </>
+          ) : (
+            <button
+              onClick={handleStartRecording}
+              disabled={!isAudioReady}
+              className="flex items-center gap-1 px-2 py-1 rounded border border-[#2a2a3a] text-muted text-[10px] font-rajdhani hover:border-red-500 hover:text-red-400 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ minHeight: 28 }}
+            >
+              <Circle size={11} />REC
+            </button>
+          )}
+        </div>
 
-        <button onClick={() => setShowSettings(!showSettings)} className="text-muted hover:text-white flex-shrink-0">
+        <button onClick={() => setShowSettings(!showSettings)} className="text-muted hover:text-white flex-shrink-0 p-1.5" style={{ minHeight: 28, minWidth: 28 }}>
           <Settings size={15} />
         </button>
 
         {/* Ghost Session — hide on mobile */}
         {!isMobile && (
-          <div className="flex-shrink-0">
+          <div className="hidden md:block flex-shrink-0">
             <GhostOverlay />
           </div>
         )}
@@ -215,11 +241,12 @@ export default function DJApp() {
         {!isMobile && (
           <button
             onClick={() => setPracticeActive(!practiceActive)}
-            className="flex items-center gap-1 px-2 py-1 rounded border text-[9px] font-orbitron flex-shrink-0 transition-all"
+            className="hidden md:flex items-center gap-1 px-2 py-1 rounded border text-[9px] font-orbitron flex-shrink-0 transition-all"
             style={{
               borderColor: practiceActive ? '#ffbe0b' : '#2a2a3a',
               color: practiceActive ? '#ffbe0b' : '#555566',
               backgroundColor: practiceActive ? '#ffbe0b11' : 'transparent',
+              minHeight: 28,
             }}
           >
             <Target size={11} />PRACTICE
@@ -230,13 +257,14 @@ export default function DJApp() {
         <button
           onClick={() => setShowMobileCtrl(true)}
           className="flex items-center gap-1 px-2 py-1 rounded border border-[#2a2a3a] text-muted text-[9px] font-orbitron hover:border-[#00f5ff] hover:text-[#00f5ff] flex-shrink-0"
+          style={{ minHeight: 28 }}
         >
-          <Smartphone size={11} />{!isMobile && 'CTRL'}
+          <Smartphone size={11} /><span className="hidden sm:inline">CTRL</span>
         </button>
 
         <div className="flex items-center gap-1 flex-shrink-0">
           <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isAudioReady ? '#00cc44' : '#ff4400', boxShadow: isAudioReady ? '0 0 5px #00cc44' : 'none' }} />
-          {!isMobile && <span className="text-[8px] font-rajdhani text-muted">{isAudioReady ? 'AUDIO OK' : 'CLICK TO INIT'}</span>}
+          <span className="hidden sm:inline text-[8px] font-rajdhani text-muted">{isAudioReady ? 'AUDIO OK' : 'CLICK TO INIT'}</span>
         </div>
       </header>
 
@@ -268,7 +296,7 @@ export default function DJApp() {
             ) : (
               <>
       {/* Library + Camelot */}
-        <div className="flex flex-col flex-shrink-0 h-full border-r overflow-hidden" style={{ borderColor: '#2a2a3a', width: 280 }}>
+        <div className="hidden lg:flex flex-col flex-shrink-0 h-full border-r overflow-hidden" style={{ borderColor: '#2a2a3a', width: 260 }}>
           {/* Library tab bar */}
           <div className="flex border-b shrink-0" style={{ borderColor: '#2a2a3a' }}>
             {(['tracks', 'samples'] as const).map((tab) => (
@@ -305,13 +333,13 @@ export default function DJApp() {
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           {/* Decks + Mixer */}
           <div className="flex flex-1 min-h-0 overflow-hidden">
-            <div className="flex-1 min-w-0 p-2 overflow-y-auto" style={{ maxWidth: '42%' }}>
+            <div className="flex-1 min-w-0 p-1 md:p-2 overflow-y-auto" style={{ maxWidth: '44%' }}>
               <Deck deckId="A" />
             </div>
-            <div className="flex-shrink-0 p-2 overflow-y-auto" style={{ width: 210 }}>
+            <div className="flex-shrink-0 p-1 md:p-2 overflow-y-auto" style={{ width: 180 }}>
               <Mixer />
             </div>
-            <div className="flex-1 min-w-0 p-2 overflow-y-auto" style={{ maxWidth: '42%' }}>
+            <div className="flex-1 min-w-0 p-1 md:p-2 overflow-y-auto" style={{ maxWidth: '44%' }}>
               <Deck deckId="B" />
             </div>
           </div>
@@ -336,6 +364,13 @@ export default function DJApp() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Visual Engine panel */}
+          {showVisual && (
+            <div className="flex-shrink-0 px-2 pb-1" style={{ borderTop: '1px solid #2a2a3a' }}>
+              <VisualEngine />
+            </div>
+          )}
 
           {/* Bottom: Effects + Sampler + Visualizers */}
           <div className="flex gap-2 px-2 pb-2 flex-shrink-0 overflow-x-auto" style={{ borderTop: '1px solid #2a2a3a', paddingTop: 8 }}>

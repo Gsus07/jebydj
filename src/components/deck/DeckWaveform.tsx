@@ -16,6 +16,19 @@ interface DeckWaveformProps {
   onSeek: (time: number) => void;
 }
 
+/** Sync a canvas element's internal pixel dimensions to its CSS layout size (DPR-aware). */
+function syncCanvasSize(canvas: HTMLCanvasElement): { width: number; height: number } {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.round(rect.width * dpr);
+  const h = Math.round(rect.height * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  return { width: w, height: h };
+}
+
 export function DeckWaveform({
   deckId,
   waveformData,
@@ -28,6 +41,7 @@ export function DeckWaveform({
   loopActive,
   onSeek,
 }: DeckWaveformProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const overviewCanvasRef = useRef<HTMLCanvasElement>(null);
   const detailCanvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
@@ -40,7 +54,7 @@ export function DeckWaveform({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { width, height } = canvas;
+    const { width, height } = syncCanvasSize(canvas);
     ctx.clearRect(0, 0, width, height);
 
     // Background
@@ -124,7 +138,7 @@ export function DeckWaveform({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const { width, height } = canvas;
+    const { width, height } = syncCanvasSize(canvas);
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = '#0d0d14';
     ctx.fillRect(0, 0, width, height);
@@ -229,6 +243,19 @@ export function DeckWaveform({
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [drawOverview, drawDetail]);
 
+  // ResizeObserver to keep canvas pixel size in sync with CSS layout
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const ro = new ResizeObserver(() => {
+      // Force re-sync on next animation frame (syncCanvasSize is called inside draw)
+      drawOverview();
+      drawDetail();
+    });
+    ro.observe(container);
+    return () => ro.disconnect();
+  }, [drawOverview, drawDetail]);
+
   const handleOverviewClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (duration === 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -237,24 +264,29 @@ export function DeckWaveform({
     onSeek(fraction * duration);
   }, [duration, onSeek]);
 
+  const handleOverviewTouch = useCallback((e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (duration === 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.changedTouches[0].clientX - rect.left;
+    const fraction = x / rect.width;
+    onSeek(fraction * duration);
+  }, [duration, onSeek]);
+
   return (
-    <div className="flex flex-col gap-1 w-full">
-      {/* Overview waveform */}
+    <div ref={containerRef} className="flex flex-col gap-1 w-full">
+      {/* Overview waveform — 100% width, responsive height */}
       <canvas
         ref={overviewCanvasRef}
-        width={520}
-        height={50}
-        className="w-full h-12 rounded cursor-pointer"
-        style={{ border: '1px solid #2a2a3a', imageRendering: 'pixelated' }}
+        className="w-full rounded cursor-pointer"
+        style={{ height: 'clamp(32px, 5vh, 50px)', border: '1px solid #2a2a3a', display: 'block' }}
         onClick={handleOverviewClick}
+        onTouchEnd={handleOverviewTouch}
       />
-      {/* Detail waveform */}
+      {/* Detail waveform — 100% width, responsive height */}
       <canvas
         ref={detailCanvasRef}
-        width={520}
-        height={80}
-        className="w-full h-20 rounded"
-        style={{ border: `1px solid ${accentColor}44` }}
+        className="w-full rounded"
+        style={{ height: 'clamp(50px, 9vh, 80px)', border: `1px solid ${accentColor}44`, display: 'block' }}
       />
     </div>
   );

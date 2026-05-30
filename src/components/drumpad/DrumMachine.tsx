@@ -144,39 +144,42 @@ export function DrumMachine({ dawMode = false }: DrumMachineProps) {
 
       {showBounce && <BounceModal onClose={() => setShowBounce(false)} />}
 
-      {/* Step beat indicator */}
-      <div className="flex items-center px-2 h-5 shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingLeft: 134 }}>
-        {Array.from({ length: Math.max(...pattern.rows.map((r) => r.stepCount), 16) }).map((_, i) => {
-          const isBeat = i % 4 === 0;
-          const isCurrentGroup = Math.floor(dm.currentStep / 4) === Math.floor(i / 4) && dm.playing;
-          return (
-            <div
-              key={i}
-              className="text-[7px] text-center"
-              style={{
-                width: Math.max(...pattern.rows.map((r) => r.stepCount), 16) > 16 ? 12 : 20,
-                color: isBeat ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                opacity: isCurrentGroup ? 1 : 0.3,
-                fontFamily: 'var(--font-orbitron)',
-              }}
-            >
-              {isBeat ? Math.floor(i / 4) + 1 : '·'}
-            </div>
-          );
-        })}
-      </div>
+      {/* Scrollable sequencer area (beat indicator + rows scroll together) */}
+      <div className="overflow-x-auto scroll-x-hide">
+        {/* Step beat indicator */}
+        <div className="flex items-center px-2 h-5 shrink-0 border-b" style={{ borderColor: 'var(--border)', paddingLeft: 134, minWidth: 'max-content' }}>
+          {Array.from({ length: Math.max(...pattern.rows.map((r) => r.stepCount), 16) }).map((_, i) => {
+            const isBeat = i % 4 === 0;
+            const isCurrentGroup = Math.floor(dm.currentStep / 4) === Math.floor(i / 4) && dm.playing;
+            return (
+              <div
+                key={i}
+                className="text-[7px] text-center"
+                style={{
+                  width: Math.max(...pattern.rows.map((r) => r.stepCount), 16) > 16 ? 12 : 20,
+                  color: isBeat ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                  opacity: isCurrentGroup ? 1 : 0.3,
+                  fontFamily: 'var(--font-orbitron)',
+                }}
+              >
+                {isBeat ? Math.floor(i / 4) + 1 : '·'}
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Rows */}
-      <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 240 }}>
-        {pattern.rows.map((row) => (
-          <StepSequencer
-            key={row.id}
-            row={row}
-            patternId={pattern.id}
-            currentStep={dm.currentStep}
-            dawMode={dawMode}
-          />
-        ))}
+        {/* Rows */}
+        <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 240 }}>
+          {pattern.rows.map((row) => (
+            <StepSequencer
+              key={row.id}
+              row={row}
+              patternId={pattern.id}
+              currentStep={dm.currentStep}
+              dawMode={dawMode}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

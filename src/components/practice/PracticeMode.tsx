@@ -242,7 +242,7 @@ export function PracticeMode() {
 
       {/* Gauges */}
       <div className="flex items-start gap-6 flex-wrap">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <GaugeCanvas value={practiceMode.syncScore} label="SYNC" color="#00f5ff" />
           <GaugeCanvas value={practiceMode.mixTimingScore} label="TIMING" color="#ff006e" />
           <GaugeCanvas

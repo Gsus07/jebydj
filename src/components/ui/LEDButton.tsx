@@ -55,6 +55,8 @@ export function LEDButton({
         backgroundColor: active ? `${color}22` : '#1a1a24',
         boxShadow: active ? `0 0 12px ${color}66, inset 0 0 8px ${color}22` : 'none',
         borderColor: active ? color : undefined,
+        minHeight: 36,
+        minWidth: 36,
       }}
     >
       {/* LED indicator */}

@@ -39,7 +39,7 @@ export function DeckHotcues({ deckId, hotCues, onActivateCue, onSetCue, onDelete
             }}
             className="relative flex flex-col items-center justify-center rounded"
             style={{
-              height: 36,
+              minHeight: 40,
               backgroundColor: cue ? `${color}33` : '#111118',
               border: `1.5px solid ${cue ? color : '#2a2a3a'}`,
               boxShadow: cue ? `0 0 8px ${color}44` : 'none',

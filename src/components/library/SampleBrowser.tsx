@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { Search, Upload, X, Filter, RefreshCw } from 'lucide-react';
+import { Search, Upload, X, Filter, RefreshCw, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { CategoryTree } from './CategoryTree';
 import { PackList } from './PackList';
 import { SampleList } from './SampleList';
@@ -18,9 +18,11 @@ export function SampleBrowser({ dawMode = false }: { dawMode?: boolean }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(400);
+  const [containerWidth, setContainerWidth] = useState(280);
   const [isDragging, setIsDragging] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [listHeight, setListHeight] = useState(300);
+  const [catCollapsed, setCatCollapsed] = useState(false);
   const listContainerRef = useRef<HTMLDivElement>(null);
 
   // ── Initialize: load IndexedDB + generate builtin samples on first run ──────
@@ -55,8 +57,10 @@ export function SampleBrowser({ dawMode = false }: { dawMode?: boolean }) {
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
-      const h = entries[0]?.contentRect.height ?? 400;
-      setContainerHeight(h);
+      const { height, width } = entries[0]?.contentRect ?? { height: 400, width: 280 };
+      setContainerHeight(height);
+      setContainerWidth(width);
+      if (width < 230) setCatCollapsed(true);
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -202,12 +206,29 @@ export function SampleBrowser({ dawMode = false }: { dawMode?: boolean }) {
       {/* Main content: categories + sample list */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left: category tree + pack list */}
-        <div className="flex flex-col shrink-0 overflow-y-auto border-r" style={{ width: 'clamp(90px, 35%, 120px)', borderColor: 'var(--border)' }}>
-          <CategoryTree />
-          <div className="border-t mt-1 pt-1" style={{ borderColor: 'var(--border)' }}>
-            <PackList />
+        {catCollapsed ? (
+          <button
+            className="flex items-center justify-center shrink-0 border-r hover:bg-white/5 transition-colors"
+            style={{ width: 24, borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+            onClick={() => setCatCollapsed(false)}
+            title="Expand categories"
+          >
+            <PanelLeftOpen size={12} />
+          </button>
+        ) : (
+          <div className="flex flex-col shrink-0 overflow-y-auto border-r" style={{ width: 'clamp(90px, 35%, 120px)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center justify-between px-1 py-0.5 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
+              <span className="text-[8px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Categories</span>
+              <button onClick={() => setCatCollapsed(true)} title="Collapse categories" style={{ color: 'var(--text-muted)' }}>
+                <PanelLeftClose size={10} />
+              </button>
+            </div>
+            <CategoryTree />
+            <div className="border-t mt-1 pt-1" style={{ borderColor: 'var(--border)' }}>
+              <PackList />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Right: tags + sample list */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">

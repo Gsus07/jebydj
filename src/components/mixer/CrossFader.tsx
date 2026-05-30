@@ -30,7 +30,7 @@ export function CrossFader({ position, onChange, curve, onCurveChange }: CrossFa
       </div>
 
       {/* Fader */}
-      <div className="relative flex items-center">
+      <div className="relative flex items-center" style={{ minHeight: 44 }}>
         <div className="absolute left-0 right-0 h-1 rounded" style={{ backgroundColor: '#1a1a24' }} />
         <div
           className="absolute h-1 rounded"
@@ -49,7 +49,7 @@ export function CrossFader({ position, onChange, curve, onCurveChange }: CrossFa
           value={Math.round(sliderValue)}
           onChange={handleChange}
           className="w-full relative z-10"
-          style={{ accentColor: position > 0 ? '#ff006e' : '#00f5ff' }}
+          style={{ accentColor: position > 0 ? '#ff006e' : '#00f5ff', minHeight: 44 }}
         />
       </div>
 

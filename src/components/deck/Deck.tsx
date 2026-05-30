@@ -17,9 +17,10 @@ import { Upload } from 'lucide-react';
 
 interface DeckProps {
   deckId: DeckId;
+  forceNarrow?: boolean;
 }
 
-export function Deck({ deckId }: DeckProps) {
+export function Deck({ deckId, forceNarrow }: DeckProps) {
   const {
     deck, initPlayer, loadTrack, togglePlay, cue, seek, sync,
     toggleReverse, toggleKeylock, setEQHigh, setEQMid, setEQLow,
@@ -28,7 +29,7 @@ export function Deck({ deckId }: DeckProps) {
     scratch, releaseScratch, nudgeForward, nudgeBack, setTempoRange,
   } = useDeck(deckId);
 
-  const narrow = useIsNarrow();
+  const narrow = useIsNarrow() || !!forceNarrow;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const accentColor = deckId === 'A' ? '#00f5ff' : '#ff006e';

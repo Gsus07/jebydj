@@ -61,14 +61,15 @@ export function DeckLoop({
         </LEDButton>
       </div>
 
-      {/* Loop size quick buttons */}
-      <div className="grid grid-cols-4 gap-1">
+      {/* Loop size quick buttons — scrollable row on mobile */}
+      <div className="scroll-x-hide flex gap-1 pb-0.5">
         {sizes.map((size) => (
           <button
             key={size}
             onClick={() => onSetSize(size)}
-            className="text-[9px] font-rajdhani rounded px-1 py-0.5 border text-center"
+            className="text-[9px] font-rajdhani rounded px-2 border text-center flex-shrink-0"
             style={{
+              minHeight: 36,
               borderColor: loop.size === size ? accentColor : '#2a2a3a',
               color: loop.size === size ? accentColor : '#555566',
               backgroundColor: loop.size === size ? `${accentColor}22` : 'transparent',
@@ -83,13 +84,15 @@ export function DeckLoop({
       <div className="flex gap-1">
         <button
           onClick={onHalve}
-          className="flex-1 text-[9px] font-rajdhani border border-[#2a2a3a] rounded py-0.5 text-muted hover:text-white hover:border-current"
+          className="flex-1 text-[9px] font-rajdhani border border-[#2a2a3a] rounded text-muted hover:text-white hover:border-current"
+          style={{ minHeight: 36 }}
         >
           ÷2
         </button>
         <button
           onClick={onDouble}
-          className="flex-1 text-[9px] font-rajdhani border border-[#2a2a3a] rounded py-0.5 text-muted hover:text-white hover:border-current"
+          className="flex-1 text-[9px] font-rajdhani border border-[#2a2a3a] rounded text-muted hover:text-white hover:border-current"
+          style={{ minHeight: 36 }}
         >
           ×2
         </button>

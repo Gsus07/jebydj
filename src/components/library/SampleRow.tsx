@@ -222,7 +222,7 @@ export function SampleRow({ sample, isSelected, isPreview, previewProgress, dawM
             waveformData={sample.waveformData}
             progress={isPreview ? previewProgress : 0}
             color={catColor}
-            width={dawMode ? 48 : 64}
+            width={dawMode ? 32 : 64}
             height={22}
           />
         </div>
@@ -266,8 +266,8 @@ export function SampleRow({ sample, isSelected, isPreview, previewProgress, dawM
           </div>
         )}
 
-        {/* Favorite */}
-        <FavoritesStar sampleId={sample.id} isFavorite={sample.isFavorite} />
+        {/* Favorite — hidden in DAW mode to save space */}
+        {!dawMode && <FavoritesStar sampleId={sample.id} isFavorite={sample.isFavorite} />}
 
         {/* Shortcut slot selector (DAW mode only) */}
         {dawMode && (

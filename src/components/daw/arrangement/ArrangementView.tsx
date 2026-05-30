@@ -170,6 +170,11 @@ export default function ArrangementView() {
   const [insertCount, setInsertCount] = useState(0);
   const paintRef = useRef<PaintRef | null>(null);
 
+  // Touch pan — horizontal scroll for mobile (mirrors wheel-based scrollX update)
+  const touchPanRef = useRef<{
+    startX: number; startY: number; lastX: number; isHorizontal: boolean | null;
+  } | null>(null);
+
   const { zoom, scrollX, activeTool, project } = store;
   const timelineWidth = containerWidth - HEADER_WIDTH;
 
@@ -190,6 +195,54 @@ export default function ArrangementView() {
     setInsertCount(0);
     setHoverInsert(null);
   }, [armedSample?.id]);
+
+  // ── Touch pan — horizontal scroll for mobile ───────────────────────────────
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      touchPanRef.current = {
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        lastX: e.touches[0].clientX,
+        isHorizontal: null,
+      };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      const t = touchPanRef.current;
+      if (!t || e.touches.length !== 1) return;
+      const dx = t.lastX - e.touches[0].clientX;
+      const dy = Math.abs(e.touches[0].clientY - t.startY);
+
+      // Lock scroll axis after first significant movement
+      if (t.isHorizontal === null) {
+        const adx = Math.abs(t.startX - e.touches[0].clientX);
+        if (adx < 4 && dy < 4) return; // wait for clear intent
+        t.isHorizontal = adx >= dy;
+      }
+      if (!t.isHorizontal) return; // vertical scroll — let browser handle it
+
+      e.preventDefault();
+      t.lastX = e.touches[0].clientX;
+      const { scrollX: sx } = useDAWStore.getState();
+      useDAWStore.getState().setScrollX(Math.max(0, sx + dx));
+    };
+
+    const onTouchEnd = () => { touchPanRef.current = null; };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []); // stable — uses refs + getState()
 
   // ── Global mouse handlers (stable refs — all dynamic data via refs/getState) ─
 
@@ -686,8 +739,9 @@ export default function ArrangementView() {
   // ── Wheel handler ─────────────────────────────────────────────────────────
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
+      // Ctrl/Cmd + scroll → zoom
+      e.preventDefault();
       const mouseX = e.clientX - (scrollContainerRef.current?.getBoundingClientRect().left ?? 0) - HEADER_WIDTH;
       const { zoom: z, scrollX: sx } = useDAWStore.getState();
       const beatAtMouse = (sx + mouseX) / z;
@@ -695,10 +749,14 @@ export default function ArrangementView() {
       const newScrollX = beatAtMouse * newZoom - mouseX;
       store.setZoom(newZoom);
       store.setScrollX(Math.max(0, newScrollX));
-    } else if (e.shiftKey) {
-      store.setScrollX(Math.max(0, scrollX + e.deltaY * 0.5));
+    } else if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      // Shift+scroll or horizontal trackpad → horizontal timeline scroll
+      e.preventDefault();
+      const delta = e.shiftKey ? e.deltaY : e.deltaX;
+      store.setScrollX(Math.max(0, scrollX + delta * 0.5));
     } else {
-      store.setScrollX(Math.max(0, scrollX + e.deltaX * 0.5 + e.deltaY * 0.5));
+      // Plain vertical scroll → let the tracks container scroll naturally
+      // (do NOT call preventDefault — the browser handles it)
     }
   }, [scrollX, store]);
 
@@ -794,11 +852,11 @@ export default function ArrangementView() {
   ];
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {/* Toolbar */}
       <div
-        className="flex items-center gap-2 px-3 h-9 shrink-0 border-b"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
+        className="daw-toolbar daw-hscroll flex items-center gap-2 px-3 shrink-0 border-b"
+        style={{ height: 'var(--h-daw-toolbar, 36px)', background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
         <div className="flex gap-1">
           {tools.map((t) => (
@@ -894,7 +952,7 @@ export default function ArrangementView() {
       {/* Main timeline area */}
       <div
         ref={scrollContainerRef}
-        className="flex flex-col flex-1 overflow-hidden"
+        className="flex flex-col flex-1 min-h-0 overflow-hidden"
         onWheel={handleWheel}
       >
         {/* Ruler row */}
@@ -907,7 +965,7 @@ export default function ArrangementView() {
         </div>
 
         {/* Tracks */}
-        <div ref={tracksScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div ref={tracksScrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
           <div
             className="relative"
             style={{

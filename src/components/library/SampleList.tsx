@@ -81,13 +81,15 @@ export function SampleList({ samples, height, dawMode = false }: Props) {
       <div className="flex items-center gap-1 px-2 h-6 border-b shrink-0"
         style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
         <div className="w-7 shrink-0" />
-        <div className="shrink-0 w-16 text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Wave</div>
+        {dawMode && <div className="w-5 shrink-0" />}  {/* ARM */}
+        <div className={`shrink-0 text-[9px] uppercase tracking-wider ${dawMode ? 'w-8' : 'w-16'}`} style={{ color: 'var(--text-muted)' }}>Wave</div>
         <div className="flex-1 text-[9px] uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Name</div>
         <div className="w-8 text-right text-[9px] uppercase shrink-0" style={{ color: 'var(--text-muted)' }}>Dur</div>
-        <div className="w-8 text-right text-[9px] uppercase shrink-0" style={{ color: 'var(--text-muted)' }}>BPM</div>
-        <div className="w-6 text-right text-[9px] uppercase shrink-0" style={{ color: 'var(--text-muted)' }}>Key</div>
-        <div className="w-12 shrink-0" />
+        {!dawMode && <div className="w-8 text-right text-[9px] uppercase shrink-0" style={{ color: 'var(--text-muted)' }}>BPM</div>}
+        {!dawMode && <div className="w-6 text-right text-[9px] uppercase shrink-0" style={{ color: 'var(--text-muted)' }}>Key</div>}
+        {!dawMode && <div className="w-12 shrink-0" />}
         <div className="w-5 shrink-0" />
+        {dawMode && <div className="w-6 shrink-0" />}  {/* shortcut */}
       </div>
 
       {/* Scrollable area */}

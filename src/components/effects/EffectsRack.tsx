@@ -65,12 +65,11 @@ function EffectUnit({ effect }: EffectUnitProps) {
 
   return (
     <div
-      className="flex flex-col gap-2 p-2 rounded-lg flex-shrink-0"
+      className="flex flex-col gap-2 p-2 rounded-lg w-full"
       style={{
         backgroundColor: '#111118',
         border: `1px solid ${effect.enabled ? color : '#2a2a3a'}`,
         boxShadow: effect.enabled ? `0 0 12px ${color}33` : 'none',
-        minWidth: 'clamp(100px, 28vw, 130px)',
       }}
     >
       {/* Header */}
@@ -135,9 +134,11 @@ export function EffectsRack() {
       <div className="text-[9px] font-rajdhani text-muted uppercase tracking-widest mb-2 text-center">
         EFFECTS RACK
       </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="effects-rack-scroll">
         {effects.map((effect) => (
-          <EffectUnit key={effect.id} effect={effect} />
+          <div key={effect.id} className="effect-unit">
+            <EffectUnit effect={effect} />
+          </div>
         ))}
       </div>
     </div>

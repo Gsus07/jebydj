@@ -107,7 +107,7 @@ export function StepSequencer({ row, patternId, currentStep, dawMode = false }: 
       </div>
 
       {/* Steps grid */}
-      <div className="flex items-center gap-px flex-1 overflow-hidden">
+      <div className="flex items-center gap-px flex-1 overflow-x-auto scroll-x-hide">
         {stepsToRender.map((step, i) => (
           <DrumPad
             key={i}

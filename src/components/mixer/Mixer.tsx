@@ -11,11 +11,11 @@ import { VUMeter } from './VUMeter';
 import { DisplayNumber } from '@/src/components/ui/DisplayNumber';
 import { LEDButton } from '@/src/components/ui/LEDButton';
 
-export function Mixer() {
+export function Mixer({ forceNarrow }: { forceNarrow?: boolean } = {}) {
   const mixer = useDJStore((s) => s.mixer);
   const deckA = useDJStore((s) => s.decks.A);
   const deckB = useDJStore((s) => s.decks.B);
-  const narrow = useIsNarrow();
+  const narrow = useIsNarrow() || !!forceNarrow;
   const {
     setCrossfader, setCrossfaderCurve, setMasterGain, setCueMix,
     setCueGain, setMono, setDeckVolume, setDeckEQ, setDeckPFL,
@@ -82,6 +82,7 @@ export function Mixer() {
           pflActive={deckA.pfIActive}
           knobSize={knobSize}
           vuHeight={vuHeight}
+          narrow={narrow}
           onVolumeChange={handleChannelVolumeA}
           onEQHighChange={(v) => { useDJStore.getState().setDeckEQ('A', 'high', v); getDeckPlayer('A').setEQHigh(v); }}
           onEQMidChange={(v) => { useDJStore.getState().setDeckEQ('A', 'mid', v); getDeckPlayer('A').setEQMid(v); }}
@@ -155,6 +156,7 @@ export function Mixer() {
           pflActive={deckB.pfIActive}
           knobSize={knobSize}
           vuHeight={vuHeight}
+          narrow={narrow}
           onVolumeChange={handleChannelVolumeB}
           onEQHighChange={(v) => { useDJStore.getState().setDeckEQ('B', 'high', v); getDeckPlayer('B').setEQHigh(v); }}
           onEQMidChange={(v) => { useDJStore.getState().setDeckEQ('B', 'mid', v); getDeckPlayer('B').setEQMid(v); }}
@@ -187,6 +189,7 @@ interface ChannelStripProps {
   pflActive: boolean;
   knobSize: number;
   vuHeight: number;
+  narrow: boolean;
   onVolumeChange: (v: number) => void;
   onEQHighChange: (v: number) => void;
   onEQMidChange: (v: number) => void;
@@ -197,12 +200,41 @@ interface ChannelStripProps {
 
 function ChannelStrip({
   label, color, volume, eqHigh, eqMid, eqLow, pflActive,
-  knobSize, vuHeight,
+  knobSize, vuHeight, narrow,
   onVolumeChange, onEQHighChange, onEQMidChange, onEQLowChange,
   onPFLToggle, getVULevel,
 }: ChannelStripProps) {
   const toKnob = (v: number) => (v + 1) / 2;
   const fromKnob = (v: number) => v * 2 - 1;
+
+  if (narrow) {
+    return (
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <span className="text-[9px] font-orbitron font-bold text-center" style={{ color }}>CH {label}</span>
+        {/* EQ as horizontal sliders */}
+        {[
+          { label: 'HI', val: eqHigh, onChange: onEQHighChange, color },
+          { label: 'MID', val: eqMid, onChange: onEQMidChange, color: '#8338ec' },
+          { label: 'LO', val: eqLow, onChange: onEQLowChange, color: '#ff8800' },
+        ].map((band) => (
+          <div key={band.label} className="flex items-center gap-1">
+            <span className="text-[7px] font-rajdhani w-5 text-right" style={{ color: band.color }}>{band.label}</span>
+            <input
+              type="range"
+              min="0"
+              max="1000"
+              value={Math.round(toKnob(band.val) * 1000)}
+              onChange={(e) => band.onChange(fromKnob(Number(e.target.value) / 1000))}
+              style={{ accentColor: band.color, flex: 1, minHeight: 28 }}
+            />
+          </div>
+        ))}
+        {/* Volume fader */}
+        <ChannelFader value={volume} onChange={onVolumeChange} color={color} height={vuHeight} horizontal />
+        <LEDButton active={pflActive} color="#8338ec" onClick={onPFLToggle} size="sm">PFL</LEDButton>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1.5" style={{ minWidth: 52 }}>
@@ -229,9 +261,28 @@ interface ChannelFaderProps {
   onChange: (v: number) => void;
   color: string;
   height: number;
+  horizontal?: boolean;
 }
 
-function ChannelFader({ value, onChange, color, height }: ChannelFaderProps) {
+function ChannelFader({ value, onChange, color, height, horizontal = false }: ChannelFaderProps) {
+  if (horizontal) {
+    return (
+      <div className="flex items-center gap-1 w-full">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={Math.round(value * 100)}
+          onChange={(e) => onChange(Number(e.target.value) / 100)}
+          style={{ accentColor: color, flex: 1, minHeight: 36 }}
+        />
+        <span className="text-[8px] font-orbitron w-6 text-right" style={{ color: '#555566' }}>
+          {Math.round(value * 100)}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex flex-col items-center" style={{ height }}>
       <input
