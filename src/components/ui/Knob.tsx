@@ -33,9 +33,15 @@ export function Knob({
 
   // Detect touch device (only client-side)
   const [isTouch, setIsTouch] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  
   useEffect(() => {
     setIsTouch('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    setMounted(true);
   }, []);
+
+  // Helper to fix floating-point precision for SSR/hydration compatibility
+  const round = (n: number) => Math.round(n * 1e6) / 1e6;
 
   const angle = minAngle + value * (maxAngle - minAngle);
   const radius = size / 2 - 3;
@@ -43,17 +49,25 @@ export function Knob({
 
   // Track position for indicator dot
   const angleRad = ((angle - 90) * Math.PI) / 180;
-  const dotX = center + (radius - 4) * Math.cos(angleRad);
-  const dotY = center + (radius - 4) * Math.sin(angleRad);
+  const dotX = round(center + (radius - 4) * Math.cos(angleRad));
+  const dotY = round(center + (radius - 4) * Math.sin(angleRad));
 
   // Arc path for value indicator
   const arcStartAngle = ((minAngle - 90) * Math.PI) / 180;
   const arcEndAngle = ((angle - 90) * Math.PI) / 180;
   const arcRadius = radius - 1;
-  const arcX1 = center + arcRadius * Math.cos(arcStartAngle);
-  const arcY1 = center + arcRadius * Math.sin(arcStartAngle);
-  const arcX2 = center + arcRadius * Math.cos(arcEndAngle);
-  const arcY2 = center + arcRadius * Math.sin(arcEndAngle);
+  const arcX1 = round(center + arcRadius * Math.cos(arcStartAngle));
+  const arcY1 = round(center + arcRadius * Math.sin(arcStartAngle));
+  const arcX2 = round(center + arcRadius * Math.cos(arcEndAngle));
+  const arcY2 = round(center + arcRadius * Math.sin(arcEndAngle));
+  
+  // Track arc endpoints (also need rounding)
+  const trackArcStartX = round(center + arcRadius * Math.cos(arcStartAngle));
+  const trackArcStartY = round(center + arcRadius * Math.sin(arcStartAngle));
+  const maxAngleRad = ((maxAngle - 90) * Math.PI) / 180;
+  const trackArcEndX = round(center + arcRadius * Math.cos(maxAngleRad));
+  const trackArcEndY = round(center + arcRadius * Math.sin(maxAngleRad));
+  
   const largeArc = Math.abs(angle - minAngle) > 180 ? 1 : 0;
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -117,7 +131,7 @@ export function Knob({
   }, [value, onChange, disabled]);
 
   // ─── Touch slider mode ──────────────────────────────────────────────────
-  if (isTouch || forceSlider) {
+  if (mounted && (isTouch || forceSlider)) {
     return (
       <div className="flex flex-col items-center gap-0.5 select-none" style={{ minWidth: size }}>
         <input
@@ -180,8 +194,8 @@ export function Knob({
 
           {/* Track arc (background) */}
           <path
-            d={`M ${center + arcRadius * Math.cos(arcStartAngle)} ${center + arcRadius * Math.sin(arcStartAngle)}
-               A ${arcRadius} ${arcRadius} 0 1 1 ${center + arcRadius * Math.cos(((maxAngle - 90) * Math.PI) / 180)} ${center + arcRadius * Math.sin(((maxAngle - 90) * Math.PI) / 180)}`}
+            d={`M ${trackArcStartX} ${trackArcStartY}
+               A ${arcRadius} ${arcRadius} 0 1 1 ${trackArcEndX} ${trackArcEndY}`}
             fill="none"
             stroke="#2a2a3a"
             strokeWidth="2.5"
