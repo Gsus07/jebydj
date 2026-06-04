@@ -44,5 +44,20 @@ export function useAudioEngine() {
     };
   }, [initialize]);
 
+  // Persistently resume AudioContext when suspended (e.g. after tab switch, OS sleep)
+  useEffect(() => {
+    const resumeIfSuspended = () => {
+      if (audioEngine.isInitialized() && audioEngine.ctx.state === 'suspended') {
+        audioEngine.resume();
+      }
+    };
+    document.addEventListener('click', resumeIfSuspended);
+    document.addEventListener('touchstart', resumeIfSuspended);
+    return () => {
+      document.removeEventListener('click', resumeIfSuspended);
+      document.removeEventListener('touchstart', resumeIfSuspended);
+    };
+  }, []);
+
   return { isReady, initialize };
 }

@@ -52,6 +52,14 @@ export function useDeck(deckId: DeckId) {
     setDeckLoading(deckId, true);
     try {
       await audioEngine.resume();
+
+      // Ensure the audio chain is wired up.  initPlayer() may have
+      // silently returned on the very first click (AudioEngine wasn't
+      // initialised yet at that point).  After resume() we know ctx exists.
+      if (!player.gainNode) {
+        player.setup();
+      }
+
       const audioBuffer = await audioEngine.decodeAudioData(arrayBuffer.slice(0));
       player.loadBuffer(audioBuffer);
 
@@ -101,14 +109,27 @@ export function useDeck(deckId: DeckId) {
   }, [deckId, player, setDeckLoading, setDeckTrack]);
 
   // Play/Pause toggle
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (!player.hasBuffer) return;
+
+    // Resume AudioContext within this user-gesture handler —
+    // browsers only allow resume() inside a direct click/touch event.
+    if (audioEngine.isInitialized() && audioEngine.ctx.state === 'suspended') {
+      await audioEngine.resume();
+    }
+
+    // Ensure audio chain exists (may have been skipped on first click)
+    if (!player.gainNode && audioEngine.isInitialized()) {
+      player.setup();
+    }
+
     if (player.isPlaying) {
       player.pause();
       setDeckPlaying(deckId, false);
     } else {
       player.play();
-      setDeckPlaying(deckId, true);
+      // Sync with actual player state — play() may have silently returned
+      setDeckPlaying(deckId, player.isPlaying);
     }
   }, [player, deckId, setDeckPlaying]);
 

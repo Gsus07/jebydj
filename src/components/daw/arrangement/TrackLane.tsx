@@ -101,6 +101,43 @@ export default function TrackLane({
       return;
     }
 
+    // Check for DJ track drop (from TrackLibrary)
+    const trackJson = e.dataTransfer.getData('application/x-dj-track');
+    if (trackJson) {
+      try {
+        const td = JSON.parse(trackJson) as {
+          id: string; title: string; fileName: string; artist: string;
+          bpm: number; duration: number; waveformData: number[];
+          arrayBuffer: number[] | null;
+        };
+        const bpm = store.project.bpm;
+        const durationBeats = td.duration > 0 ? (td.duration / 60) * bpm : 8;
+        const waveform = td.waveformData ?? [];
+        store.pushHistory('Drop track clip');
+        store.addAudioClip(
+          track.id, snappedBeat, durationBeats,
+          td.title || td.fileName, td.id, waveform,
+        );
+        // Decode and store the audio buffer asynchronously
+        if (td.arrayBuffer) {
+          void (async () => {
+            try {
+              const { audioEngine } = await import('@/src/lib/audio/AudioEngine');
+              if (!audioEngine.isInitialized()) return;
+              const raw = new Uint8Array(td.arrayBuffer!).buffer;
+              const audioBuf = await audioEngine.decodeAudioData(raw);
+              storeAudioBuffer(td.id, audioBuf);
+            } catch (err) {
+              console.error('Failed to decode dropped track audio:', err);
+            }
+          })();
+        }
+      } catch {
+        // ignore malformed JSON
+      }
+      return;
+    }
+
     // Regular file drop
     const file = e.dataTransfer.files[0];
     if (!file) return;

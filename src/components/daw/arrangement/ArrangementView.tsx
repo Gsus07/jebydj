@@ -755,8 +755,9 @@ export default function ArrangementView() {
       const delta = e.shiftKey ? e.deltaY : e.deltaX;
       store.setScrollX(Math.max(0, scrollX + delta * 0.5));
     } else {
-      // Plain vertical scroll → let the tracks container scroll naturally
-      // (do NOT call preventDefault — the browser handles it)
+      // Plain vertical scroll → pan timeline horizontally (standard DAW behaviour)
+      e.preventDefault();
+      store.setScrollX(Math.max(0, scrollX + e.deltaY));
     }
   }, [scrollX, store]);
 

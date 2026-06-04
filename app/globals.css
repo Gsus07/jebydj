@@ -8,32 +8,32 @@
 }
 
 :root {
-  --bg-primary: rgba(6, 4, 12, 0.91);
-  --bg-surface: rgba(10, 8, 18, 0.89);
-  --bg-card: rgba(16, 13, 26, 0.86);
+  --bg-primary: rgba(6, 4, 12, 0.65);
+  --bg-surface: rgba(10, 8, 18, 0.60);
+  --bg-card: rgba(16, 13, 26, 0.55);
   --accent-cyan: #00f5ff;
   --accent-magenta: #ff006e;
   --accent-amber: #ffbe0b;
-  --text-primary: #e8e8f0;
-  --text-muted: #555566;
+  --text-primary: #ffffff;
+  --text-muted: #a0a0b8;
   --border: #2a2a3a;
   --glow-cyan: 0 0 20px rgba(0,245,255,0.4);
   --glow-magenta: 0 0 20px rgba(255,0,110,0.4);
 
   /* ─── Fluid typography ─────────────────────────────────────────────────── */
-  --font-size-display: clamp(12px, 2vw, 20px);
-  --font-size-label:   clamp(9px, 1.2vw, 13px);
-  --font-size-body:    clamp(11px, 1.5vw, 14px);
-  --font-size-micro:   clamp(8px, 1vw, 11px);
+  --font-size-display: clamp(14px, 2vw, 20px);
+  --font-size-label:   clamp(11px, 1.5vw, 14px);
+  --font-size-body:    clamp(13px, 1.8vw, 16px);
+  --font-size-micro:   clamp(10px, 1.2vw, 12px);
 
   /* ─── Fluid component sizes ────────────────────────────────────────────── */
   --knob-size:      clamp(28px, 5vw, 52px);
   --button-size:    clamp(36px, 5vw, 48px);
   --fader-height:   clamp(80px, 15vh, 180px);
   --plate-size:     clamp(110px, 18vw, 220px);
-  --font-display:   clamp(11px, 2vw, 20px);
-  --font-label:     clamp(9px, 1.5vw, 13px);
-  --font-body:      clamp(11px, 1.8vw, 14px);
+  --font-display:   clamp(13px, 2vw, 20px);
+  --font-label:     clamp(11px, 1.5vw, 14px);
+  --font-body:      clamp(13px, 1.8vw, 16px);
   --gap-sm:         clamp(4px, 1vw, 8px);
   --gap-md:         clamp(8px, 1.5vw, 16px);
   --gap-lg:         clamp(12px, 2vw, 24px);
@@ -87,15 +87,19 @@ img, canvas, video, svg {
   height: auto;
 }
 
-/* Minimum touch target size for interactive elements */
-button, [role="button"] {
-  min-height: 44px;
-  min-width: 44px;
+/* Minimum touch target size — mobile only (desktop keeps compact sizes) */
+@media (max-width: 767px) {
+  button, [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  input[type="range"] {
+    min-height: 44px;
+  }
 }
 
-/* Range inputs on mobile: bigger touch target */
+/* Range inputs: pointer cursor on all viewports */
 input[type="range"] {
-  min-height: 44px;
   cursor: pointer;
 }
 
