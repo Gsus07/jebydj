@@ -4,9 +4,9 @@
 import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys, createStore } from 'idb-keyval';
 import type { SampleItem, SamplePack } from '@/src/store/sampleTypes';
 
-const sampleStore = createStore('jebydj-samples', 'samples');
-const packStore   = createStore('jebydj-samples', 'packs');
-const bufferStore = createStore('jebydj-samples', 'buffers'); // raw ArrayBuffer
+const sampleStore = createStore('jebydj-samples-db', 'samples');
+const packStore   = createStore('jebydj-packs-db', 'packs');
+const bufferStore = createStore('jebydj-buffers-db', 'buffers'); // raw ArrayBuffer
 
 // ─── Samples ─────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ export async function dbDeleteBuffer(id: string): Promise<void> {
 // ─── Utility: check if builtin pack was already generated ────────────────────
 
 const FLAG_KEY = 'builtin-generated-v1';
-const flagStore = createStore('jebydj-samples', 'flags');
+const flagStore = createStore('jebydj-flags-db', 'flags');
 
 export async function isBuiltinGenerated(): Promise<boolean> {
   return !!(await idbGet<boolean>(FLAG_KEY, flagStore));
