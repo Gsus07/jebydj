@@ -10,6 +10,12 @@ import { useKeyboard } from '@/src/hooks/useKeyboard';
 import { useDJStore } from '@/src/store/useDJStore';
 import { useProceduralSounds } from '@/src/hooks/useProceduralSounds';
 import { MobileDJLayout } from '@/src/components/layout/MobileDJLayout';
+import { ProjectIndicator } from '@/src/components/projects/ProjectIndicator';
+import { SaveAsModal } from '@/src/components/projects/SaveAsModal';
+import { ProjectBrowser } from '@/src/components/projects/ProjectBrowser';
+import { ProjectManager } from '@/src/lib/storage/ProjectManager';
+import { useProjectStore } from '@/src/store/useProjectStore';
+import { useDAWStore } from '@/src/store/useDAWStore';
 
 const DAWLayout = dynamic(() => import('@/src/components/daw/DAWLayout'), { ssr: false });
 const SampleBrowser = dynamic(() => import('@/src/components/library/SampleBrowser').then((m) => ({ default: m.SampleBrowser })), { ssr: false });
@@ -63,6 +69,25 @@ export default function DJApp() {
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
+  }, []);
+  // Auto-save & mark unsaved on store changes
+  useEffect(() => {
+    const cleanup = ProjectManager.startAutoSave();
+    // Load recent projects list on mount
+    void ProjectManager.refreshProjectList();
+    return cleanup;
+  }, []);
+
+  // Mark project unsaved when DAW state changes
+  useEffect(() => {
+    let prev = useDAWStore.getState().hasUnsavedChanges;
+    const unsub = useDAWStore.subscribe((state) => {
+      if (state.hasUnsavedChanges && !prev) {
+        useProjectStore.getState().markUnsaved();
+      }
+      prev = state.hasUnsavedChanges;
+    });
+    return unsub;
   }, []);
 
   const handleStartRecording = useCallback(async () => {
@@ -132,6 +157,9 @@ export default function DJApp() {
             <span className="font-orbitron font-black text-sm md:text-lg" style={{ color: '#00f5ff', textShadow: '0 0 16px rgba(0,245,255,0.6)' }}>JEBY</span>
             <span className="font-orbitron font-black text-sm md:text-lg" style={{ color: '#ff006e', textShadow: '0 0 16px rgba(255,0,110,0.6)' }}>DJ</span>
           </div>
+
+          {/* Project Indicator */}
+          <ProjectIndicator />
 
           {/* Active deck — hide on mobile */}
           {!isMobile && (
@@ -441,6 +469,9 @@ export default function DJApp() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* ── Project Modals ── */}
+      <SaveAsModal />
+      <ProjectBrowser />
     </div>
   );
 }

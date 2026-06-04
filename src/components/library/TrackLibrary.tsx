@@ -13,9 +13,15 @@ import { harmonicCompatibility } from '@/src/lib/utils/bpmUtils';
 import type { Track } from '@/src/store/types';
 import { Search, Upload, ChevronUp, ChevronDown, Music, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { set as idbSet, get as idbGet, del as idbDel, keys as idbKeys } from 'idb-keyval';
+import { registerTrackLibraryAudioCache } from '@/src/lib/storage/ProjectManager';
 
 // ─── Audio buffer cache ───────────────────────────────────────────────────────
 const audioBufferCache: Map<string, ArrayBuffer> = new Map();
+
+// Register cache so ProjectManager can persist deck audio to IDB
+if (typeof window !== 'undefined') {
+  registerTrackLibraryAudioCache(audioBufferCache);
+}
 
 function generateTrackId(file: File): string {
   return `${file.name}-${file.size}-${file.lastModified}`;
