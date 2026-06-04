@@ -6,6 +6,8 @@ import type { SampleItem } from '@/src/store/sampleTypes';
 import { useSampleStore } from '@/src/store/useSampleStore';
 import { sampleManager } from '@/src/lib/samples/SampleManager';
 import { audioEngine } from '@/src/lib/audio/AudioEngine';
+import { useDAWStore } from '@/src/store/useDAWStore';
+import { CATEGORY_COLORS } from './SampleRow';
 
 const ROW_HEIGHT = 36; // px
 const OVERSCAN = 3;
@@ -118,6 +120,15 @@ export function SampleList({ samples, height, dawMode = false }: Props) {
                   dawMode={dawMode}
                   onClick={() => {
                     selectSamples([sample.id]);
+                    // UX Móvil: armar automáticamente al tocar
+                    useDAWStore.getState().armSample({
+                      id: sample.id,
+                      name: sample.name,
+                      duration: sample.duration,
+                      color: CATEGORY_COLORS[sample.category] ?? '#888888',
+                      category: sample.category,
+                      waveformData: sample.waveformData,
+                    });
                     void playPreview(sample);
                   }}
                   onDoubleClick={() => {

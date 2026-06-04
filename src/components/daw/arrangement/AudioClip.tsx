@@ -33,11 +33,14 @@ export default function AudioClip({
     const w = Math.max(4, width);
     const h = height;
 
-    canvas.width = w * dpr;
+    const MAX_CANVAS_WIDTH = 4096; // Límite seguro para navegadores móviles
+    const safeW = Math.min(w * dpr, MAX_CANVAS_WIDTH);
+
+    canvas.width = safeW;
     canvas.height = h * dpr;
     canvas.style.width = `${w}px`;
     canvas.style.height = `${h}px`;
-    ctx.scale(dpr, dpr);
+    ctx.scale(safeW / w, dpr);
 
     // Background
     ctx.fillStyle = isSelected ? `${track.color}55` : `${track.color}33`;

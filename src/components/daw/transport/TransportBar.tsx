@@ -199,7 +199,7 @@ export default function TransportBar() {
 
       {/* Position Display */}
       <button
-        className="min-w-[120px] text-center cursor-pointer px-2 py-1 rounded font-mono text-sm tracking-wider hover:bg-white/5"
+        className="w-[140px] tabular-nums shrink-0 text-center cursor-pointer px-2 py-1 rounded font-mono text-sm tracking-wider hover:bg-white/5"
         style={{
           fontFamily: 'var(--font-orbitron)',
           color: 'var(--accent-cyan)',

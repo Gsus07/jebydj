@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDJStore } from '@/src/store/useDJStore';
+import { useDAWStore } from '@/src/store/useDAWStore';
 import { audioEngine } from '@/src/lib/audio/AudioEngine';
 import { getDeckPlayer } from '@/src/lib/audio/DeckPlayer';
 import { generateWaveform } from '@/src/lib/audio/WaveformAnalyzer';
@@ -386,7 +387,32 @@ export function TrackLibrary() {
                   track={track}
                   isSelected={library.selectedTrackId === track.id}
                   compatKey={compat}
-                  onSelect={() => setSelectedTrack(track.id)}
+                  onSelect={() => {
+                    setSelectedTrack(track.id);
+                    // UX Móvil: armar automáticamente al tocar
+                    useDAWStore.getState().armSample({
+                      id: track.id,
+                      name: track.title || track.fileName,
+                      duration: track.duration,
+                      color: '#00f5ff',
+                      category: 'track',
+                      waveformData: track.waveformData ? Array.from(track.waveformData) : [],
+                    });
+                    // Precargar el buffer para que suene de inmediato al insertarse
+                    const ab = audioBufferCache.get(track.id);
+                    if (ab) {
+                      void (async () => {
+                        try {
+                          const { storeAudioBuffer } = await import('@/src/lib/daw/DAWEngine');
+                          if (!audioEngine.isInitialized()) return;
+                          const audioBuf = await audioEngine.decodeAudioData(ab.slice(0));
+                          storeAudioBuffer(track.id, audioBuf);
+                        } catch (err) {
+                          console.error('Failed to pre-decode armed track:', err);
+                        }
+                      })();
+                    }
+                  }}
                   onLoadToDeck={(deck) => handleLoadToDeck(track, deck)}
                   onRemove={() => removeTrack(track.id)}
                   onDragStart={(e) => handleDragStart(e, track)}
