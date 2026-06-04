@@ -157,22 +157,6 @@ export function DeckVinyl({ deckId, isPlaying, tempo, onScratch, onReleaseScratc
   const size = vinylSize;
   const center = size / 2;
 
-  // Helper to fix floating-point precision for SSR/hydration compatibility
-  const round = (n: number) => Math.round(n * 1e6) / 1e6;
-
-  // Pre-calculate timing marks with rounded values
-  const timingMarks = Array.from({ length: 8 }, (_, i) => {
-    const angle = (i / 8) * 2 * Math.PI;
-    const innerR = center - 15;
-    const outerR = center - 8;
-    return {
-      x1: round(center + innerR * Math.cos(angle)),
-      y1: round(center + innerR * Math.sin(angle)),
-      x2: round(center + outerR * Math.cos(angle)),
-      y2: round(center + outerR * Math.sin(angle)),
-    };
-  });
-
   return (
     <div
       ref={vinylRef}
@@ -227,18 +211,23 @@ export function DeckVinyl({ deckId, isPlaying, tempo, onScratch, onReleaseScratc
         />
 
         {/* Timing marks */}
-        {timingMarks.map((mark, i) => (
-          <line
-            key={i}
-            x1={mark.x1}
-            y1={mark.y1}
-            x2={mark.x2}
-            y2={mark.y2}
-            stroke={accentColor}
-            strokeWidth="2"
-            opacity="0.6"
-          />
-        ))}
+        {Array.from({ length: 8 }, (_, i) => {
+          const angle = (i / 8) * 2 * Math.PI;
+          const innerR = center - 15;
+          const outerR = center - 8;
+          return (
+            <line
+              key={i}
+              x1={center + innerR * Math.cos(angle)}
+              y1={center + innerR * Math.sin(angle)}
+              x2={center + outerR * Math.cos(angle)}
+              y2={center + outerR * Math.sin(angle)}
+              stroke={accentColor}
+              strokeWidth="2"
+              opacity="0.6"
+            />
+          );
+        })}
       </svg>
 
       {/* Track name overlay */}
