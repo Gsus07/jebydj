@@ -109,7 +109,7 @@ interface DragRef {
   fromTrackId: string;
   fromStartBeat: number;
   durationBeats: number;
-  clipType: 'audio' | 'midi';
+  clipType: 'audio' | 'midi' | 'pattern';
   clipColor: string;
   clipName: string;
   offsetBeats: number;       // beats into clip where user clicked

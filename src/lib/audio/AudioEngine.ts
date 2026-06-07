@@ -75,6 +75,9 @@ export class AudioEngine {
     this.masterAnalyser.connect(this.boothGain);
     // boothGain intentionally not connected to destination
     // (would need a secondary AudioContext or setSinkId for real booth output)
+
+    // Register AudioWorklets
+    this.ctx.audioWorklet.addModule('/worklets/karplus-strong.js').catch(console.error);
   }
 
   resume(): Promise<void> {

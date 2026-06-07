@@ -10,7 +10,13 @@ import PianoRoll from './pianoroll/PianoRoll';
 import DAWMixer from './mixer/DAWMixer';
 import ExportModal from './ExportModal';
 import { TrackLibrary } from '@/src/components/library/TrackLibrary';
-import { Layers, Grid3X3, Sliders, Download, FileText, Grid, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { useChannelRackStore } from '@/src/store/useChannelRackStore';
+import { Layers, Grid3X3, Sliders, Download, FileText, Grid, ChevronLeft, ChevronRight, BookOpen, LayoutList } from 'lucide-react';
+
+const ChannelRack = dynamic(
+  () => import('@/src/components/channel-rack/ChannelRack'),
+  { ssr: false },
+);
 
 const SampleBrowser = dynamic(
   () => import('@/src/components/library/SampleBrowser').then((m) => ({ default: m.SampleBrowser })),
@@ -31,6 +37,8 @@ export default function DAWLayout() {
   const [libTab, setLibTab] = useState<'tracks' | 'samples'>('tracks');
   const [libCollapsed, setLibCollapsed] = useState(false);
   const [drumOpen, setDrumOpen] = useState(false);
+  const channelRackOpen = useChannelRackStore((s) => s.channelRackOpen);
+  const setChannelRackOpen = useChannelRackStore((s) => s.setChannelRackOpen);
 
   // Collapse library by default on narrow/landscape-mobile viewports
   useEffect(() => {
@@ -72,6 +80,11 @@ export default function DAWLayout() {
         e.preventDefault();
         store.setShowExport(true);
       }
+      // Ctrl+R: channel rack
+      if (e.key === 'r' && e.ctrlKey) {
+        e.preventDefault();
+        setChannelRackOpen(!channelRackOpen);
+      }
       // Ctrl+D: drum machine
       if (e.key === 'd' && e.ctrlKey) {
         e.preventDefault();
@@ -79,6 +92,7 @@ export default function DAWLayout() {
       }
     };
     window.addEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => window.removeEventListener('keydown', handler);
   }, [store, view, pianoRollOpen, mixerOpen]);
 
@@ -142,6 +156,19 @@ export default function DAWLayout() {
           title="Toggle Drum Machine (Ctrl+D)"
         >
           <Grid size={10} /> DRUM
+        </button>
+
+        <button
+          className="flex items-center gap-1 text-[10px] px-2 h-5 rounded"
+          style={{
+            background: channelRackOpen ? 'rgba(255,0,110,0.1)' : 'transparent',
+            color: channelRackOpen ? 'var(--accent-magenta)' : 'var(--text-muted)',
+            border: `1px solid ${channelRackOpen ? 'var(--accent-magenta)' : 'transparent'}`,
+          }}
+          onClick={() => setChannelRackOpen(!channelRackOpen)}
+          title="Toggle Channel Rack (Ctrl+R)"
+        >
+          <LayoutList size={10} /> CH.RACK
         </button>
 
         <div className="w-px h-4 mx-0.5" style={{ background: 'var(--border)' }} />
@@ -259,6 +286,13 @@ export default function DAWLayout() {
           </div>
 
           {/* Drum Machine (collapsible bottom panel) */}
+          {/* Channel Rack (collapsible bottom panel) */}
+          {channelRackOpen && (
+            <div className="shrink-0 overflow-y-auto" style={{ maxHeight: '40vh' }}>
+              <ChannelRack />
+            </div>
+          )}
+
           {drumOpen && (
             <div className="shrink-0 border-t overflow-y-auto" style={{ borderColor: 'var(--border)', maxHeight: '40vh' }}>
               <DrumMachine dawMode />

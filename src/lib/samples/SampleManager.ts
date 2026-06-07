@@ -52,6 +52,10 @@ class SampleManagerClass {
     this.bufferCache.set(id, buffer);
   }
 
+  getBuffer(id: string): AudioBuffer | undefined {
+    return this.bufferCache.get(id);
+  }
+
   storeRaw(id: string, raw: ArrayBuffer): void {
     this.rawCache.set(id, raw);
   }

@@ -68,7 +68,7 @@ export interface DAWClip {
   trackId: string;
   startBeat: number;
   durationBeats: number;
-  type: 'audio' | 'midi';
+  type: 'audio' | 'midi' | 'pattern';
   name: string;
   color?: string;
   gainDb: number;
@@ -86,6 +86,8 @@ export interface DAWClip {
   loopEndBeats: number;
   // MIDI
   notes: MIDINote[];
+  // Pattern (Channel Rack)
+  patternId?: string;
   // Clip Launcher
   followAction: FollowAction;
   followActionTarget: number;
