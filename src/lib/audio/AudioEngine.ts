@@ -78,6 +78,7 @@ export class AudioEngine {
 
     // Register AudioWorklets
     this.ctx.audioWorklet.addModule('/worklets/karplus-strong.js').catch(console.error);
+    this.ctx.audioWorklet.addModule('/worklets/gross-beat.js').catch(console.error);
   }
 
   resume(): Promise<void> {
