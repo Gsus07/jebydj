@@ -46,7 +46,7 @@ export class PeakControllerProcessor {
 
   // Gets the current peak/lfo values (0 to 1) for the UI or for modulating other parameters
   getControlValues() {
-    this._analyzer.getFloatTimeDomainData(this._peakData);
+    this._analyzer.getFloatTimeDomainData(this._peakData as any);
     
     // Calculate RMS / Peak
     let peak = 0;

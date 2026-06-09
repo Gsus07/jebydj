@@ -163,7 +163,7 @@ export class SytrusEngine implements SynthEngine {
       const idx = parseInt(parts[0].replace('op', '')) - 1;
       if (idx >= 0 && idx < 6) {
         if (parts[1] in this.ops[idx]) {
-          (this.ops[idx] as Record<string, number>)[parts[1]] = value;
+          (this.ops[idx] as any)[parts[1]] = value;
         }
       }
     } else if (parts[0] === 'mod') {

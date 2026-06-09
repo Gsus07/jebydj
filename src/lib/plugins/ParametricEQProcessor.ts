@@ -101,7 +101,7 @@ export class ParametricEQProcessor {
     
     for (let i = 0; i < 7; i++) {
       if (this.bands[i].enabled) {
-        this._filters[i].getFrequencyResponse(freqs, tempMag, tempPhase);
+        this._filters[i].getFrequencyResponse(freqs as any, tempMag as any, tempPhase as any);
         for (let j = 0; j < freqs.length; j++) {
           magResponse[j] *= tempMag[j];
         }

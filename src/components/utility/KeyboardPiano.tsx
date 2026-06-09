@@ -16,7 +16,7 @@ const KEY_MAP: Record<string, number> = {
 
 export function KeyboardPiano() {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
-  const activeChannelId = useChannelRackStore(s => s.activeChannelId);
+  const activeChannelId = useChannelRackStore(s => s.selectedChannelId);
 
   // We keep track of which keys are held down so we don't re-trigger noteOn on OS key repeat
   const heldKeys = useRef<Set<string>>(new Set());
