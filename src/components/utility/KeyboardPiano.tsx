@@ -16,15 +16,15 @@ const KEY_MAP: Record<string, number> = {
 
 export function KeyboardPiano() {
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
-  const activeChannelId = useChannelRackStore(s => s.selectedChannelId);
+  const selectedChannelId = useChannelRackStore(s => s.selectedChannelId);
 
   // We keep track of which keys are held down so we don't re-trigger noteOn on OS key repeat
   const heldKeys = useRef<Set<string>>(new Set());
 
   const getActiveSynth = useCallback(() => {
-    if (!activeChannelId) return null;
-    return getSynth(activeChannelId);
-  }, [activeChannelId]);
+    if (!selectedChannelId) return null;
+    return getSynth(selectedChannelId);
+  }, [selectedChannelId]);
 
   const playNote = useCallback((note: number) => {
     const synth = getActiveSynth();
