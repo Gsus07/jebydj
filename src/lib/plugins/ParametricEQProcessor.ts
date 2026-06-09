@@ -88,7 +88,7 @@ export class ParametricEQProcessor {
   }
 
   getFrequencyData(array: Uint8Array) {
-    this._analyzer.getByteFrequencyData(array);
+    this._analyzer.getByteFrequencyData(array as any);
   }
 
   // Get frequency response curve for drawing

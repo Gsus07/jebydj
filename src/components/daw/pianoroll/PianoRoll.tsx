@@ -4,7 +4,11 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { useDAWStore } from '@/src/store/useDAWStore';
 import PianoKeys from './PianoKeys';
 import type { MIDINote } from '@/src/store/dawTypes';
-import { X, ZoomIn, ZoomOut, AlignLeft } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, AlignLeft, Layers, AlignJustify, Activity, Logs } from 'lucide-react';
+import { StampTool } from '../../piano-roll/StampTool';
+import { ArpTool } from '../../piano-roll/ArpTool';
+import { LFOTool } from '../../piano-roll/LFOTool';
+import { StrumTool } from '../../piano-roll/StrumTool';
 
 const NOTE_HEIGHT = 14; // px per pitch step
 const VELOCITY_LANE_H = 60;
@@ -20,6 +24,7 @@ export default function PianoRoll() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(600);
   const [containerH, setContainerH] = useState(300);
+  const [activeTool, setActiveTool] = useState<'stamp'|'arp'|'lfo'|'strum'|null>(null);
 
   // Find clip
   let clip = null as (typeof store.project.tracks[0]['clips'][0]) | null;
@@ -35,6 +40,75 @@ export default function PianoRoll() {
   const noteHeight = NOTE_HEIGHT;
   const gridHeight = 128 * noteHeight;
   const timelineH = containerH - VELOCITY_LANE_H - 28; // minus ruler and velocity
+
+
+  const handleStamp = useCallback((notes: { pitch: number, offsetTicks: number, durationTicks: number }[]) => {
+    if (!clip) return;
+    store.pushHistory('Stamp chord');
+    const currentClip = clip;
+    const startBeat = Math.round((scrollX / zoom) / store.pianoRollSnapSubdivision) * store.pianoRollSnapSubdivision;
+    const addedIds: string[] = [];
+    notes.forEach(n => {
+       const id = store.addNote(currentClip.id, {
+          pitch: 60 + n.pitch,
+          startBeat: startBeat + (n.offsetTicks / 480),
+          durationBeats: n.durationTicks / 480,
+          velocity: 100,
+          probability: 100,
+          muted: false
+       });
+       addedIds.push(id);
+    });
+    store.selectNotes(addedIds);
+    setActiveTool(null);
+  }, [clip, scrollX, zoom, store]);
+
+  const handleArp = useCallback((params: any) => {
+    if (!clip || selectedNoteIds.length === 0) return;
+    const currentClip = clip;
+    store.pushHistory('Arpeggiate notes');
+    const snap = params.time / 480;
+    selectedNoteIds.forEach(id => {
+       const note = currentClip.notes.find((n: any) => n.id === id);
+       if (!note) return;
+       store.removeNote(currentClip.id, id);
+       for (let b = 0; b < note.durationBeats; b += snap) {
+           store.addNote(currentClip.id, {
+               ...note,
+               startBeat: note.startBeat + b,
+               durationBeats: snap * params.gate,
+           });
+       }
+    });
+  }, [clip, selectedNoteIds, store]);
+
+  const handleLFO = useCallback((params: any) => {
+    if (!clip || selectedNoteIds.length === 0) return;
+    const currentClip = clip;
+    store.pushHistory('LFO tool');
+    selectedNoteIds.forEach(id => {
+       const note = currentClip.notes.find((n: any) => n.id === id);
+       if (!note) return;
+       const newVel = Math.min(127, Math.max(1, note.velocity + params.depth * 64 * Math.sin(note.startBeat * params.speed * Math.PI * 2 + params.phase * Math.PI * 2)));
+       store.updateNote(currentClip.id, id, { velocity: newVel });
+    });
+  }, [clip, selectedNoteIds, store]);
+
+  const handleStrum = useCallback((params: any) => {
+    if (!clip || selectedNoteIds.length === 0) return;
+    const currentClip = clip;
+    store.pushHistory('Strum notes');
+    const notes = currentClip.notes.filter((n: any) => selectedNoteIds.includes(n.id)).sort((a: any, b: any) => a.pitch - b.pitch);
+    if (params.altDirection) notes.reverse();
+    notes.forEach((note: any, i: number) => {
+       const offset = (i * params.time * 0.5) * Math.pow(params.tension, i);
+       const vel = Math.max(10, note.velocity * Math.pow(params.velocity, i));
+       store.updateNote(currentClip.id, note.id, { startBeat: note.startBeat + offset, velocity: vel });
+    });
+  }, [clip, selectedNoteIds, store]);
+
+
+
 
   // Measure container
   useEffect(() => {
@@ -232,6 +306,24 @@ export default function PianoRoll() {
           <option value={0.125}>1/32</option>
           <option value={0.0625}>1/64</option>
         </select>
+
+        {/* Tools */}
+        <div className="flex gap-1 relative ml-2">
+          <button onClick={() => setActiveTool(activeTool === 'stamp' ? null : 'stamp')} className="p-1 rounded hover:bg-white/10" style={{ color: activeTool === 'stamp' ? '#00f5ff' : 'var(--text-muted)' }} title="Stamp Tool"><Layers size={12} /></button>
+          <button onClick={() => setActiveTool(activeTool === 'arp' ? null : 'arp')} className="p-1 rounded hover:bg-white/10" style={{ color: activeTool === 'arp' ? '#ff006e' : 'var(--text-muted)' }} title="Arpeggiator"><AlignJustify size={12} /></button>
+          <button onClick={() => setActiveTool(activeTool === 'lfo' ? null : 'lfo')} className="p-1 rounded hover:bg-white/10" style={{ color: activeTool === 'lfo' ? '#06d6a0' : 'var(--text-muted)' }} title="LFO Tool"><Activity size={12} /></button>
+          <button onClick={() => setActiveTool(activeTool === 'strum' ? null : 'strum')} className="p-1 rounded hover:bg-white/10" style={{ color: activeTool === 'strum' ? '#ffbe0b' : 'var(--text-muted)' }} title="Strumizer"><Logs size={12} /></button>
+          
+          {/* Tool Popups */}
+          {activeTool && (
+            <div className="absolute top-8 left-0 z-50">
+              {activeTool === 'stamp' && <StampTool onStampSelect={handleStamp} />}
+              {activeTool === 'arp' && <ArpTool onApply={handleArp} onClose={() => setActiveTool(null)} />}
+              {activeTool === 'lfo' && <LFOTool onApply={handleLFO} onClose={() => setActiveTool(null)} />}
+              {activeTool === 'strum' && <StrumTool onApply={handleStrum} onClose={() => setActiveTool(null)} />}
+            </div>
+          )}
+        </div>
 
         {/* Quantize */}
         <button

@@ -11,7 +11,11 @@ import DAWMixer from './mixer/DAWMixer';
 import ExportModal from './ExportModal';
 import { TrackLibrary } from '@/src/components/library/TrackLibrary';
 import { useChannelRackStore } from '@/src/store/useChannelRackStore';
-import { Layers, Grid3X3, Sliders, Download, FileText, Grid, ChevronLeft, ChevronRight, BookOpen, LayoutList } from 'lucide-react';
+import { Layers, Grid3X3, Sliders, Download, FileText, Grid, ChevronLeft, ChevronRight, BookOpen, LayoutList, Network, ClipboardList, History } from 'lucide-react';
+import Patcher from '../patcher/Patcher';
+import { ScoreLog } from '../utility/ScoreLog';
+import { UndoTree } from '../utility/UndoTree';
+import { FloatingWindow } from '../utility/FloatingWindow';
 
 const ChannelRack = dynamic(
   () => import('@/src/components/channel-rack/ChannelRack'),
@@ -39,6 +43,9 @@ export default function DAWLayout() {
   const [drumOpen, setDrumOpen] = useState(false);
   const channelRackOpen = useChannelRackStore((s) => s.channelRackOpen);
   const setChannelRackOpen = useChannelRackStore((s) => s.setChannelRackOpen);
+  const [patcherOpen, setPatcherOpen] = useState(false);
+  const [scoreLogOpen, setScoreLogOpen] = useState(false);
+  const [undoTreeOpen, setUndoTreeOpen] = useState(false);
 
   // Collapse library by default on narrow/landscape-mobile viewports
   useEffect(() => {
@@ -186,6 +193,50 @@ export default function DAWLayout() {
           <Sliders size={10} /> MIXER
         </button>
 
+        <div className="w-px h-4 mx-0.5" style={{ background: 'var(--border)' }} />
+
+        {/* Patcher */}
+        <button
+          className="flex items-center gap-1 text-[10px] px-2 h-5 rounded"
+          style={{
+            background: patcherOpen ? 'rgba(0,245,255,0.1)' : 'transparent',
+            color: patcherOpen ? 'var(--accent-cyan)' : 'var(--text-muted)',
+            border: `1px solid ${patcherOpen ? 'var(--accent-cyan)' : 'transparent'}`,
+          }}
+          onClick={() => setPatcherOpen(!patcherOpen)}
+          title="Toggle Patcher"
+        >
+          <Network size={10} /> PATCHER
+        </button>
+
+        {/* Score Log */}
+        <button
+          className="flex items-center gap-1 text-[10px] px-2 h-5 rounded"
+          style={{
+            background: scoreLogOpen ? 'rgba(255,190,11,0.1)' : 'transparent',
+            color: scoreLogOpen ? '#ffbe0b' : 'var(--text-muted)',
+            border: `1px solid ${scoreLogOpen ? '#ffbe0b' : 'transparent'}`,
+          }}
+          onClick={() => setScoreLogOpen(!scoreLogOpen)}
+          title="Toggle Score Log"
+        >
+          <ClipboardList size={10} /> LOG
+        </button>
+
+        {/* Undo Tree */}
+        <button
+          className="flex items-center gap-1 text-[10px] px-2 h-5 rounded"
+          style={{
+            background: undoTreeOpen ? 'rgba(255,0,110,0.1)' : 'transparent',
+            color: undoTreeOpen ? 'var(--accent-magenta)' : 'var(--text-muted)',
+            border: `1px solid ${undoTreeOpen ? 'var(--accent-magenta)' : 'transparent'}`,
+          }}
+          onClick={() => setUndoTreeOpen(!undoTreeOpen)}
+          title="Toggle Undo History"
+        >
+          <History size={10} /> UNDO
+        </button>
+
         {/* Export */}
         <button
           className="flex items-center gap-1 text-[10px] px-2 h-5 rounded"
@@ -317,6 +368,15 @@ export default function DAWLayout() {
 
       {/* Export modal */}
       {showExportModal && <ExportModal />}
+
+      {/* Floating Windows */}
+      {patcherOpen && (
+        <FloatingWindow title="Patcher" icon={<Network size={14} />} onClose={() => setPatcherOpen(false)} initialW={800} initialH={500} initialX={100} initialY={100}>
+          <Patcher />
+        </FloatingWindow>
+      )}
+      {scoreLogOpen && <ScoreLog onClose={() => setScoreLogOpen(false)} />}
+      {undoTreeOpen && <UndoTree onClose={() => setUndoTreeOpen(false)} />}
     </div>
   );
 }

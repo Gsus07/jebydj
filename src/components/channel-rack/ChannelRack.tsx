@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { useChannelRackStore } from '@/src/store/useChannelRackStore';
 import { ChannelRow } from './ChannelRow';
 import { PatternSelector } from './PatternSelector';
+import { KeyboardPiano } from '../utility/KeyboardPiano';
 import { patternEngine } from '@/src/lib/pattern/PatternEngine';
 import { SYNTH_LABELS } from '@/src/lib/synths/SynthInterface';
 import type { SynthType } from '@/src/lib/synths/SynthInterface';
@@ -181,6 +182,12 @@ export function ChannelRack() {
               ))}
             </div>
           )}
+        </div>
+        
+        {/* Keyboard Piano (MIDI Testing) */}
+        <div className="px-2 pb-2">
+           <div className="text-[9px] uppercase tracking-wider font-bold text-white/50 mb-1 ml-1">Keyboard Input</div>
+           <KeyboardPiano />
         </div>
       </div>
     </div>
