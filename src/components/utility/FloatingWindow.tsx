@@ -30,6 +30,19 @@ export function FloatingWindow({
   const [size, setSize] = useState({ w: initialW, h: initialH });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const maxW = window.innerWidth - 20;
+      const maxH = window.innerHeight - 20;
+      const finalW = Math.min(initialW, maxW);
+      const finalH = Math.min(initialH, maxH);
+      const finalX = Math.max(10, Math.min(initialX, window.innerWidth - finalW - 10));
+      const finalY = Math.max(10, Math.min(initialY, window.innerHeight - finalH - 10));
+      setSize({ w: Math.max(minW, finalW), h: Math.max(minH, finalH) });
+      setPos({ x: finalX, y: finalY });
+    }
+  }, [initialW, initialH, initialX, initialY, minW, minH]);
   
   const dragStartRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, startW: 0, startH: 0 });
 
