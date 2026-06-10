@@ -66,6 +66,7 @@ html {
   /* Low-poly calico cat on red→purple gradient — Ubuntu-inspired wallpaper */
   background: #07040e url('/background/Tina.png') center/cover no-repeat fixed;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body {
@@ -73,6 +74,9 @@ body {
   background: transparent;
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   overflow-x: hidden;
   width: 100%;

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Circle, Download, Ghost, Target, Smartphone, Layers, Music2, Grid3X3 } from 'lucide-react';
+import { Settings, Circle, Download, Ghost, Target, Smartphone, Layers, Music2, Grid3X3, Maximize, Minimize } from 'lucide-react';
 import { useSampleStore } from '@/src/store/useSampleStore';
 import { useAudioEngine } from '@/src/hooks/useAudioEngine';
 import { useKeyboard } from '@/src/hooks/useKeyboard';
@@ -57,6 +57,7 @@ export default function DJApp() {
   const [recTime, setRecTime] = useState(0);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [showMobileCtrl, setShowMobileCtrl] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Unlock AudioContext on interaction
   useEffect(() => {
@@ -166,7 +167,7 @@ export default function DJApp() {
 
   return (
     <div
-      className="flex flex-col h-screen overflow-hidden select-none"
+      className="flex flex-col h-[100dvh] overflow-hidden select-none"
       style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}
     >
       {/* ── HEADER ── */}
@@ -280,6 +281,21 @@ export default function DJApp() {
 
         <button onClick={() => setShowSettings(!showSettings)} className="text-muted hover:text-white flex-shrink-0 p-1.5" style={{ minHeight: 28, minWidth: 28 }}>
           <Settings size={15} />
+        </button>
+        
+        <button 
+          onClick={() => {
+            if (!document.fullscreenElement) {
+              document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+            } else {
+              document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+            }
+          }} 
+          className="text-muted hover:text-white flex-shrink-0 p-1.5" 
+          style={{ minHeight: 28, minWidth: 28 }}
+          title="Toggle Fullscreen"
+        >
+          {isFullscreen ? <Minimize size={15} /> : <Maximize size={15} />}
         </button>
 
         {/* Ghost Session — hide on mobile */}
