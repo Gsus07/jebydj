@@ -151,10 +151,10 @@ type ChannelRackStore = ChannelRackState & ChannelRackActions;
 // ─── Initial State ───────────────────────────────────────────────────────────
 
 const defaultChannels: Channel[] = [
-  createDefaultChannel('Kick', 'sample', 0),
-  createDefaultChannel('Snare', 'sample', 1),
-  createDefaultChannel('Hi-Hat', 'sample', 2),
-  createDefaultChannel('Clap', 'sample', 3),
+  { ...createDefaultChannel('Kick', 'sample', 0), sampleId: 'kick_808' },
+  { ...createDefaultChannel('Snare', 'sample', 1), sampleId: 'snare_classic' },
+  { ...createDefaultChannel('Hi-Hat', 'sample', 2), sampleId: 'hihat_closed' },
+  { ...createDefaultChannel('Clap', 'sample', 3), sampleId: 'clap_classic' },
 ];
 
 const defaultPattern = createDefaultPattern('Pattern 1', defaultChannels);

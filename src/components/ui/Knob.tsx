@@ -41,20 +41,25 @@ export function Knob({
   const radius = size / 2 - 3;
   const center = size / 2;
 
+  const round = (n: number) => Number(n.toFixed(3));
+
   // Track position for indicator dot
   const angleRad = ((angle - 90) * Math.PI) / 180;
-  const dotX = center + (radius - 4) * Math.cos(angleRad);
-  const dotY = center + (radius - 4) * Math.sin(angleRad);
+  const dotX = round(center + (radius - 4) * Math.cos(angleRad));
+  const dotY = round(center + (radius - 4) * Math.sin(angleRad));
 
   // Arc path for value indicator
   const arcStartAngle = ((minAngle - 90) * Math.PI) / 180;
   const arcEndAngle = ((angle - 90) * Math.PI) / 180;
   const arcRadius = radius - 1;
-  const arcX1 = center + arcRadius * Math.cos(arcStartAngle);
-  const arcY1 = center + arcRadius * Math.sin(arcStartAngle);
-  const arcX2 = center + arcRadius * Math.cos(arcEndAngle);
-  const arcY2 = center + arcRadius * Math.sin(arcEndAngle);
+  const arcX1 = round(center + arcRadius * Math.cos(arcStartAngle));
+  const arcY1 = round(center + arcRadius * Math.sin(arcStartAngle));
+  const arcX2 = round(center + arcRadius * Math.cos(arcEndAngle));
+  const arcY2 = round(center + arcRadius * Math.sin(arcEndAngle));
   const largeArc = Math.abs(angle - minAngle) > 180 ? 1 : 0;
+  
+  const trackEndX = round(center + arcRadius * Math.cos(((maxAngle - 90) * Math.PI) / 180));
+  const trackEndY = round(center + arcRadius * Math.sin(((maxAngle - 90) * Math.PI) / 180));
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (disabled) return;
@@ -180,8 +185,7 @@ export function Knob({
 
           {/* Track arc (background) */}
           <path
-            d={`M ${center + arcRadius * Math.cos(arcStartAngle)} ${center + arcRadius * Math.sin(arcStartAngle)}
-               A ${arcRadius} ${arcRadius} 0 1 1 ${center + arcRadius * Math.cos(((maxAngle - 90) * Math.PI) / 180)} ${center + arcRadius * Math.sin(((maxAngle - 90) * Math.PI) / 180)}`}
+            d={`M ${arcX1} ${arcY1} A ${arcRadius} ${arcRadius} 0 1 1 ${trackEndX} ${trackEndY}`}
             fill="none"
             stroke="#2a2a3a"
             strokeWidth="2.5"

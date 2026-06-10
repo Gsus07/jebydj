@@ -8,6 +8,8 @@ import { KeyboardPiano } from '../utility/KeyboardPiano';
 import { patternEngine } from '@/src/lib/pattern/PatternEngine';
 import { SYNTH_LABELS } from '@/src/lib/synths/SynthInterface';
 import type { SynthType } from '@/src/lib/synths/SynthInterface';
+import { generateAllSounds } from '@/src/lib/samples/ProceduralSounds';
+import { audioEngine } from '@/src/lib/audio/AudioEngine';
 import {
   Plus, Play, Square, X, ChevronDown,
 } from 'lucide-react';
@@ -41,6 +43,27 @@ export function ChannelRack() {
   } = useChannelRackStore();
 
   const [showAddMenu, setShowAddMenu] = useState(false);
+
+  React.useEffect(() => {
+    const loadSamples = async () => {
+      try {
+        await generateAllSounds(audioEngine.ctx);
+      } catch (err) {
+        console.error('Error generating procedural sounds:', err);
+      }
+    };
+    loadSamples();
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__channelRack = {
+        get channels() { return useChannelRackStore.getState().channels },
+        get patterns() { return useChannelRackStore.getState().patterns },
+        scheduler: patternEngine
+      };
+    }
+  }, []);
 
   const handleAddSample = useCallback((name: string) => {
     addChannel(name, 'sample');
@@ -100,7 +123,12 @@ export function ChannelRack() {
 
         {/* Play / Stop */}
         <button
-          onClick={() => patternEngine.toggle()}
+          onClick={async () => {
+            if (audioEngine.ctx.state === 'suspended') {
+              await audioEngine.ctx.resume();
+            }
+            patternEngine.toggle();
+          }}
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10"
           style={{ color: playing ? '#ff4444' : 'var(--accent-cyan)' }}
           title={playing ? 'Stop' : 'Play pattern'}

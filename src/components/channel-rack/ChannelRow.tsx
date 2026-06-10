@@ -4,7 +4,9 @@ import React, { useState, useCallback } from 'react';
 import { useChannelRackStore } from '@/src/store/useChannelRackStore';
 import type { Channel, StepData } from '@/src/store/useChannelRackStore';
 import { Knob } from '@/src/components/ui/Knob';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Play } from 'lucide-react';
+import { audioEngine } from '@/src/lib/audio/AudioEngine';
+import { sampleManager } from '@/src/lib/samples/SampleManager';
 
 // ─── Color Picker (16 colors) ────────────────────────────────────────────────
 
@@ -82,22 +84,28 @@ function StepButton({
 
   return (
     <button
-      className="flex-shrink-0 rounded-sm transition-all"
+      className={`flex-shrink-0 rounded-sm transition-all ${isCurrent ? 'step-playing' : ''}`}
       style={{
         width: 18,
         height: 18,
+        pointerEvents: 'auto',
         background: step.on
           ? color
           : isGroupDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
         border: isCurrent
-          ? '1.5px solid #fff'
+          ? '2px solid var(--accent-cyan)'
           : step.on
           ? `1px solid ${color}`
           : '1px solid rgba(255,255,255,0.06)',
         opacity: step.on ? (step.velocity / 127) * 0.7 + 0.3 : 1,
         boxShadow: step.on ? `0 0 6px ${color}40` : 'none',
+        filter: isCurrent && step.on ? 'brightness(1.5)' : 'none',
+        outlineOffset: 1,
       }}
-      onClick={onToggle}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle();
+      }}
       title={step.on ? `V:${step.velocity} P:${step.pitch}` : undefined}
     />
   );
@@ -125,6 +133,33 @@ export function ChannelRow({
     setEditingName(false);
     if (nameVal.trim()) updateChannel(channel.id, { name: nameVal.trim() });
   }, [nameVal, channel.id, updateChannel]);
+
+  const handleChannelPreview = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const ctx = audioEngine.ctx;
+    if (ctx.state === 'suspended') await ctx.resume();
+    
+    if (channel.type === 'sample' && channel.sampleId) {
+      const buffer = sampleManager.getBuffer(channel.sampleId);
+      if (buffer) {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.value = channel.volume;
+        source.connect(gain);
+        gain.connect(audioEngine.masterGain);
+        source.start(0);
+      }
+    } else if (channel.type === 'instrument') {
+      import('@/src/lib/pattern/PatternEngine').then(({ getSynth }) => {
+        const synth = getSynth(channel.id);
+        if (synth) {
+          synth.noteOn(60, 100, ctx.currentTime);
+          synth.noteOff(60, ctx.currentTime + 0.2);
+        }
+      });
+    }
+  }, [channel]);
 
   return (
     <div
@@ -166,6 +201,15 @@ export function ChannelRow({
         title="Solo"
       >
         S
+      </button>
+
+      {/* Preview Button */}
+      <button
+        className="w-4 h-4 flex items-center justify-center rounded hover:bg-white/10 transition-colors flex-shrink-0"
+        onClick={handleChannelPreview}
+        title={`Preview ${channel.name}`}
+      >
+        <Play size={10} fill="currentColor" className="text-gray-400 hover:text-white" />
       </button>
 
       {/* Name */}
