@@ -88,7 +88,7 @@ export function ChannelRack() {
     >
       {/* Header */}
       <div
-        className="flex items-center gap-2 px-3 h-8 shrink-0 border-b"
+        className="daw-hscroll flex items-center gap-2 px-3 min-h-8 shrink-0 border-b"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}
       >
         <span
