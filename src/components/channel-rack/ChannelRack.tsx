@@ -44,16 +44,35 @@ export function ChannelRack() {
 
   const [showAddMenu, setShowAddMenu] = useState(false);
 
-  React.useEffect(() => {
-    const loadSamples = async () => {
-      try {
-        await generateAllSounds(audioEngine.ctx);
-      } catch (err) {
-        console.error('Error generating procedural sounds:', err);
-      }
-    };
-    loadSamples();
+  const regenerateSamples = useCallback(async () => {
+    if (audioEngine.ctx && audioEngine.ctx.state !== 'running') {
+      try { await audioEngine.ctx.resume(); } catch (_) {}
+    }
+
+    console.log('Generando samples procedurales...');
+    const sounds = await generateAllSounds(audioEngine.ctx);
+    console.log('Samples generados:', sounds.length);
+
+    const { sampleManager } = await import('@/src/lib/samples/SampleManager');
+    
+    for (const s of sounds) {
+      sampleManager.storeBuffer(s.id, s.buffer);
+      // Fallback for default channels that use 'kick_808' instead of 'proc_kick_808'
+      sampleManager.storeBuffer(s.id.replace('proc_', ''), s.buffer); 
+    }
+
+    console.log('Buffers asignados a SampleManager');
   }, []);
+
+  React.useEffect(() => {
+    const init = async () => {
+      if (audioEngine.ctx && audioEngine.ctx.state === 'suspended') {
+        try { await audioEngine.ctx.resume(); } catch(_) {}
+      }
+      await regenerateSamples();
+    };
+    init();
+  }, [regenerateSamples]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -124,9 +143,35 @@ export function ChannelRack() {
         {/* Play / Stop */}
         <button
           onClick={async () => {
-            if (audioEngine.ctx.state === 'suspended') {
-              await audioEngine.ctx.resume();
+            if (playing) {
+              patternEngine.toggle();
+              return;
             }
+
+            try {
+              if (audioEngine.ctx.state !== 'running') {
+                await audioEngine.ctx.resume();
+              }
+            } catch (err) {
+              console.error('No se pudo iniciar el AudioContext:', err);
+              return;
+            }
+
+            console.log('AudioContext state al presionar Play:', audioEngine.ctx.state);
+
+            const { sampleManager } = await import('@/src/lib/samples/SampleManager');
+            const channels = useChannelRackStore.getState().channels;
+            console.log('Canales:', channels.map(c => ({
+              name: c.name,
+              hasBuffer: !!(c.sampleId && sampleManager.getBuffer(c.sampleId))
+            })));
+
+            const hasAnyBuffer = channels.some(c => c.sampleId && sampleManager.getBuffer(c.sampleId));
+            if (!hasAnyBuffer) {
+              console.error('Ningún canal tiene AudioBuffer — regenerando samples...');
+              await regenerateSamples();
+            }
+
             patternEngine.toggle();
           }}
           className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10"
@@ -218,6 +263,47 @@ export function ChannelRack() {
            <KeyboardPiano />
         </div>
       </div>
+      
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          style={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16,
+            zIndex: 9999,
+            padding: '8px 16px',
+            background: '#00f5ff',
+            color: '#000',
+            border: 'none',
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontSize: 12,
+            fontWeight: 700
+          }}
+          onClick={async () => {
+            await audioEngine.ctx.resume()
+
+            console.log('=== AUDIO TEST ===')
+            console.log('ctx.state:', audioEngine.ctx.state)
+            console.log('ctx.sampleRate:', audioEngine.ctx.sampleRate)
+            console.log('masterGain.gain:', audioEngine.masterGain.gain.value)
+
+            const osc = audioEngine.ctx.createOscillator()
+            const gain = audioEngine.ctx.createGain()
+            osc.frequency.value = 440  // La4
+            gain.gain.setValueAtTime(0.3, audioEngine.ctx.currentTime)
+            gain.gain.exponentialRampToValueAtTime(0.001, audioEngine.ctx.currentTime + 0.5)
+            osc.connect(gain)
+            gain.connect(audioEngine.masterGain)
+            osc.start()
+            osc.stop(audioEngine.ctx.currentTime + 0.5)
+
+            console.log('Si escuchas un beep de 440Hz, el audio funciona')
+          }}
+        >
+          🔊 TEST AUDIO
+        </button>
+      )}
     </div>
   );
 }

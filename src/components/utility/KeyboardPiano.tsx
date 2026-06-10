@@ -26,9 +26,47 @@ export function KeyboardPiano() {
     return getSynth(selectedChannelId);
   }, [selectedChannelId]);
 
-  const playNote = useCallback((note: number) => {
-    const synth = getActiveSynth();
-    if (synth) synth.noteOn(note, 100, 0); // velocity 100
+  const playNote = useCallback(async (note: number) => {
+    const engine = (await import('@/src/lib/audio/AudioEngine')).audioEngine;
+    if (engine.ctx && engine.ctx.state !== 'running') {
+      try { await engine.ctx.resume(); } catch (_) {}
+    }
+
+    const channels = useChannelRackStore.getState().channels;
+    const activeChannel = channels.find(c => c.id === selectedChannelId) ?? channels[0];
+
+    if (!activeChannel) {
+      console.error('No hay canal activo en el Channel Rack');
+      return;
+    }
+
+    if (activeChannel.type === 'instrument') {
+      const synth = getActiveSynth();
+      if (synth) synth.noteOn(note, 100, 0); // velocity 100
+    } else {
+      const { sampleManager } = await import('@/src/lib/samples/SampleManager');
+      const buffer = activeChannel.sampleId ? sampleManager.getBuffer(activeChannel.sampleId) : null;
+      if (!buffer) {
+        console.error('Canal activo sin buffer:', activeChannel.name);
+        return;
+      }
+
+      const semitoneOffset = note - 60;
+      const playbackRate = Math.pow(2, semitoneOffset / 12);
+
+      const source = engine.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.playbackRate.value = playbackRate;
+
+      const gain = engine.ctx.createGain();
+      gain.gain.value = 1.0;
+
+      source.connect(gain);
+      gain.connect(engine.masterGain);
+      source.start(0);
+
+      console.log('Piano key:', note, 'rate:', playbackRate.toFixed(3));
+    }
     
     // Dispatch score log event
     window.dispatchEvent(new CustomEvent('midi-log', {
@@ -40,7 +78,7 @@ export function KeyboardPiano() {
       next.add(note);
       return next;
     });
-  }, [getActiveSynth]);
+  }, [selectedChannelId, getActiveSynth]);
 
   const releaseNote = useCallback((note: number) => {
     const synth = getActiveSynth();

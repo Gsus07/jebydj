@@ -58,6 +58,30 @@ export default function DJApp() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [showMobileCtrl, setShowMobileCtrl] = useState(false);
 
+  // Unlock AudioContext on interaction
+  useEffect(() => {
+    const unlockAudio = async () => {
+      try {
+        if (audioEngine.ctx && audioEngine.ctx.state === 'suspended') {
+          await audioEngine.ctx.resume();
+          console.log('AudioContext desbloqueado:', audioEngine.ctx.state);
+        }
+      } catch (err) {
+        console.error('Error desbloqueando AudioContext:', err);
+      }
+    };
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('mousedown', unlockAudio);
+    return () => {
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('mousedown', unlockAudio);
+    };
+  }, []);
+
   // Responsive: detect narrow viewport
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {

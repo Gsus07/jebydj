@@ -19,7 +19,16 @@ export class AudioEngine {
   static getInstance(): AudioEngine {
     if (!AudioEngine._instance) {
       AudioEngine._instance = new AudioEngine();
+      if (typeof window !== 'undefined') {
+        (window as any).__audioEngine = AudioEngine._instance;
+      }
     }
+    
+    // Always attempt resume if suspended
+    if (AudioEngine._instance.ctx && AudioEngine._instance.ctx.state === 'suspended') {
+      AudioEngine._instance.ctx.resume().catch(() => {});
+    }
+    
     return AudioEngine._instance;
   }
 
