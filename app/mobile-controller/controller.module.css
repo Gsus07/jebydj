@@ -1,0 +1,286 @@
+/* app/mobile-controller/controller.module.css */
+
+.container {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --card: #1a1a24;
+  --cyan: #00f5ff;
+  --magenta: #ff006e;
+  --amber: #ffbe0b;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --muted: #555566;
+
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', system-ui, sans-serif;
+  
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  touch-action: none; /* Prevent browser gestures */
+  user-select: none;
+  -webkit-user-select: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.orbitron {
+  font-family: 'Orbitron', monospace;
+}
+
+.header {
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+}
+
+.headerTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.menuBtn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--text);
+  background: none;
+  border: none;
+  outline: none;
+}
+
+/* Portrait Layout */
+.layoutPortrait {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Landscape Layout */
+.layoutLandscape {
+  display: grid;
+  grid-template-columns: 1fr 80px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+.deckInfo {
+  padding: 8px;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.waveformContainer {
+  width: 100%;
+  height: 48px;
+  background-color: var(--surface);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.deckMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.controlsArea {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.deckControls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  gap: 8px;
+  border-right: 1px solid var(--border);
+}
+
+.deckControls:last-child {
+  border-right: none;
+}
+
+.crossfaderContainer {
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+  position: relative;
+}
+
+.tabsArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tabHeader {
+  display: flex;
+  height: 48px;
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.tabBtn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.tabBtnActive {
+  color: var(--cyan);
+  border-bottom: 2px solid var(--cyan);
+}
+
+.tabContent {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* Touch Button Base */
+.touchBtn {
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 8px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  transition: transform 0.05s ease;
+}
+
+.touchBtn:active {
+  transform: scale(0.95);
+}
+
+/* Connection Screen */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+/* Drawer */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 80%;
+  max-width: 320px;
+  height: 100dvh;
+  background-color: var(--card);
+  border-left: 1px solid var(--border);
+  z-index: 2000;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.drawerOpen {
+  transform: translateX(0);
+}
+
+.drawerHeader {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Sliders */
+.vSliderContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: 120px;
+  width: 56px;
+  position: relative;
+}
+
+.vSliderTrack {
+  flex: 1;
+  width: 4px;
+  background-color: var(--surface);
+  border-radius: 2px;
+  position: relative;
+}
+
+.vSliderThumb {
+  width: 40px;
+  height: 24px;
+  background-color: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.vSliderZero {
+  position: absolute;
+  top: 50%;
+  left: -8px;
+  right: -8px;
+  height: 2px;
+  background-color: rgba(255,255,255,0.2);
+}

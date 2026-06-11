@@ -1,186 +1,172 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useDJStore } from '@/src/store/useDJStore';
-
-const SEND = '/api/controller/send';
-
-async function sendAction(action: string, value: number, deck: string) {
-  try {
-    await fetch(SEND, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action, value, deck }),
-    });
-  } catch {
-    // fail silently on mobile
-  }
-}
+import React, { useEffect, useState, useCallback } from 'react';
+import styles from './controller.module.css';
+import { useMobileController } from './components/useMobileController';
+import { DeckControls } from './components/DeckControls';
+import { Crossfader } from './components/Crossfader';
+import { TabsArea } from './components/TabsArea';
+import { PitchSlider } from './components/PitchSlider';
+import { Drawer } from './components/Drawer';
 
 export default function MobileControllerPage() {
-  const [crossfader, setCrossfader] = useState(0); // -1 to 1
-  const [volume, setVolume] = useState(0.8);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartVal, setDragStartVal] = useState(0);
-  const [effects, setEffects] = useState([false, false, false, false]);
-  const [bpm, setBpm] = useState(0);
+  const { connected, latency, state, sendMsg } = useMobileController();
+  const [activeTab, setActiveTab] = useState<'EQ' | 'FX' | 'LOOPS' | 'PADS'>('EQ');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [pitchDeck, setPitchDeck] = useState<'A' | 'B' | null>(null);
+  const [isPortrait, setIsPortrait] = useState(true);
 
-  // Poll BPM from server (could extend to fetch deck state)
+  // Layout & Setup
   useEffect(() => {
-    const iv = setInterval(async () => {
-      try {
-        const res = await fetch('/api/controller/events');
-        const data = (await res.json()) as { events: Array<{ action: string; value: number }> };
-        const bpmEvent = data.events.find((e) => e.action === 'bpm');
-        if (bpmEvent) setBpm(bpmEvent.value);
-      } catch { /* ignore */ }
-    }, 2000);
-    return () => clearInterval(iv);
-  }, []);
+    // Basic setup
+    document.body.style.overscrollBehavior = 'none';
+    const preventContext = (e: MouseEvent) => e.preventDefault();
+    document.addEventListener('contextmenu', preventContext);
 
-  const handlePlayA = useCallback(() => { sendAction('play', 1, 'A'); }, []);
-  const handlePlayB = useCallback(() => { sendAction('play', 1, 'B'); }, []);
-  const handlePauseA = useCallback(() => { sendAction('pause', 1, 'A'); }, []);
-  const handlePauseB = useCallback(() => { sendAction('pause', 1, 'B'); }, []);
+    // Orientation
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
 
-  const handleCrossfaderTouch = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    const touch = e.touches[0];
-    setIsDragging(true);
-    setDragStartX(touch.clientX);
-    setDragStartVal(crossfader);
-  }, [crossfader]);
+    // Fullscreen and WakeLock on connect
+    if (connected) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+      if ('wakeLock' in navigator) {
+        (navigator as any).wakeLock.request('screen').catch(() => {});
+      }
+    }
 
-  const handleCrossfaderMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const touch = e.touches[0];
-    const dx = (touch.clientX - dragStartX) / 150; // 150px = full range
-    const newVal = Math.max(-1, Math.min(1, dragStartVal + dx));
-    setCrossfader(newVal);
-    sendAction('crossfader', newVal, 'master');
-  }, [isDragging, dragStartX, dragStartVal]);
+    return () => {
+      document.body.style.overscrollBehavior = 'auto';
+      document.removeEventListener('contextmenu', preventContext);
+      window.removeEventListener('resize', checkOrientation);
+    };
+  }, [connected]);
 
-  const handleCrossfaderEnd = useCallback(() => setIsDragging(false), []);
+  if (!connected) {
+    return (
+      <div className={styles.overlay}>
+        <div style={{ textAlign: 'center' }}>
+          <div className={styles.orbitron} style={{ fontSize: 24, color: 'var(--cyan)' }}>🎛 JEBY DJ</div>
+          <div style={{ fontSize: 14, color: 'var(--muted)', letterSpacing: 2 }}>Mobile Controller</div>
+        </div>
+        <div style={{ padding: '16px 32px', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, textAlign: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center' }}>
+            <span>Conectando</span>
+            <div className={styles.statusDot} style={{ backgroundColor: 'var(--amber)', animation: 'pulse 1s infinite' }} />
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+          Asegúrate de que el servidor WS esté corriendo.
+        </div>
+        <button 
+          className={styles.touchBtn} 
+          style={{ width: 200, marginTop: 32 }}
+          onClick={() => window.location.reload()}
+        >
+          Volver a intentar
+        </button>
+      </div>
+    );
+  }
 
-  const toggleEffect = useCallback((i: number) => {
-    setEffects((prev) => {
-      const next = [...prev];
-      next[i] = !next[i];
-      sendAction('effect', next[i] ? 1 : 0, `fx${i}`);
-      return next;
-    });
-  }, []);
+  // Common Header
+  const Header = (
+    <div className={styles.header}>
+      <div className={styles.statusIndicator}>
+        <div className={styles.statusDot} style={{ backgroundColor: latency < 50 ? '#00ff00' : (latency < 150 ? 'var(--amber)' : 'var(--magenta)') }} />
+        <span className={styles.orbitron}>CONECTADO</span>
+      </div>
+      <div className={`${styles.orbitron} ${styles.headerTitle}`}>
+        <span style={{ color: 'var(--cyan)' }}>JEBY</span><span style={{ color: 'var(--magenta)' }}>DJ</span>
+      </div>
+      <button className={`${styles.menuBtn} ${styles.orbitron}`} onTouchStart={(e) => { e.preventDefault(); setDrawerOpen(true); }}>
+        ≡ MENÚ
+      </button>
+    </div>
+  );
 
-  const EFFECT_LABELS = ['REVERB', 'DELAY', 'FILTER', 'CRUSH'];
-  const EFFECT_COLORS = ['#00f5ff', '#ff006e', '#ffbe0b', '#8338ec'];
+  // Common Tabs Bar
+  const TabsBar = (
+    <div className={styles.tabHeader}>
+      {(['EQ', 'FX', 'LOOPS', 'PADS'] as const).map(tab => (
+        <button
+          key={tab}
+          className={`${styles.tabBtn} ${activeTab === tab ? styles.tabBtnActive : ''}`}
+          onTouchStart={(e) => { e.preventDefault(); setActiveTab(tab); }}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-between"
-      style={{ backgroundColor: '#0a0a0f', padding: '20px 16px', fontFamily: 'Orbitron, monospace', color: '#e8e8f0' }}
-    >
-      {/* Header */}
-      <div className="text-center mb-4">
-        <div style={{ fontSize: 12, color: '#555566', letterSpacing: 4 }}>JEBY DJ</div>
-        <div style={{ fontSize: 10, color: '#555566' }}>MOBILE CONTROLLER</div>
-        {bpm > 0 && <div style={{ fontSize: 18, color: '#ffbe0b', marginTop: 4 }}>{bpm.toFixed(1)} BPM</div>}
-      </div>
+    <div className={styles.container}>
+      {isPortrait && Header}
 
-      {/* Play/Pause buttons */}
-      <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
-        {(['A', 'B'] as const).map((deck) => (
-          <div key={deck} style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-            <div style={{ fontSize: 10, color: deck === 'A' ? '#00f5ff' : '#ff006e', letterSpacing: 3 }}>DECK {deck}</div>
-            <button
-              onTouchStart={deck === 'A' ? handlePlayA : handlePlayB}
-              style={{
-                width: 72, height: 72, borderRadius: 36,
-                backgroundColor: deck === 'A' ? '#00f5ff22' : '#ff006e22',
-                border: `2px solid ${deck === 'A' ? '#00f5ff' : '#ff006e'}`,
-                color: deck === 'A' ? '#00f5ff' : '#ff006e',
-                fontSize: 20,
-              }}
-            >▶</button>
-            <button
-              onTouchStart={deck === 'A' ? handlePauseA : handlePauseB}
-              style={{
-                width: 72, height: 72, borderRadius: 36,
-                backgroundColor: '#1a1a24',
-                border: '2px solid #2a2a3a',
-                color: '#555566',
-                fontSize: 20,
-              }}
-            >⏸</button>
+      {isPortrait ? (
+        <div className={styles.layoutPortrait}>
+          {/* Deck Info & Controls A */}
+          <div style={{ position: 'relative' }}>
+            <DeckControls deckId="A" state={state.deckA} sendMsg={sendMsg} />
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40 }} onTouchStart={(e) => { e.preventDefault(); setPitchDeck('A'); }} />
           </div>
-        ))}
-      </div>
+          
+          {/* Deck Info & Controls B */}
+          <div style={{ position: 'relative' }}>
+            <DeckControls deckId="B" state={state.deckB} sendMsg={sendMsg} />
+            <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40 }} onTouchStart={(e) => { e.preventDefault(); setPitchDeck('B'); }} />
+          </div>
+          
+          <Crossfader value={state.mixer.crossfader} sendMsg={sendMsg} />
+          
+          <div className={styles.tabsArea}>
+            {TabsBar}
+            <TabsArea activeTab={activeTab} state={state} sendMsg={sendMsg} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh' }}>
+          {Header}
+          <div className={styles.layoutLandscape}>
+            <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+               <DeckControls deckId="A" state={state.deckA} sendMsg={sendMsg} />
+               <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40 }} onTouchStart={(e) => { e.preventDefault(); setPitchDeck('A'); }} />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '16px 0', backgroundColor: 'var(--surface)', borderLeft: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+              <div style={{ writingMode: 'vertical-rl', textAlign: 'center', flex: 1, color: 'var(--muted)', fontSize: 10, letterSpacing: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>CROSSFADER</div>
+               <Crossfader value={state.mixer.crossfader} sendMsg={sendMsg} vertical={true} />
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+               <DeckControls deckId="B" state={state.deckB} sendMsg={sendMsg} />
+               <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 40 }} onTouchStart={(e) => { e.preventDefault(); setPitchDeck('B'); }} />
+            </div>
+          </div>
+          
+          <div className={styles.tabsArea} style={{ height: '40vh', borderTop: '1px solid var(--border)' }}>
+            {TabsBar}
+            <TabsArea activeTab={activeTab} state={state} sendMsg={sendMsg} />
+          </div>
+        </div>
+      )}
 
-      {/* Crossfader */}
-      <div style={{ width: '100%', maxWidth: 300, marginBottom: 32 }}>
-        <div style={{ fontSize: 9, color: '#555566', textAlign: 'center', marginBottom: 8, letterSpacing: 2 }}>
-          CROSSFADER
-        </div>
-        <div
-          style={{
-            position: 'relative', height: 48, borderRadius: 24,
-            backgroundColor: '#1a1a24', border: '1px solid #2a2a3a',
-            userSelect: 'none',
-          }}
-          onTouchStart={handleCrossfaderTouch}
-          onTouchMove={handleCrossfaderMove}
-          onTouchEnd={handleCrossfaderEnd}
-        >
-          {/* Track */}
-          <div style={{
-            position: 'absolute', top: '50%', left: '5%', right: '5%', height: 2,
-            transform: 'translateY(-50%)', backgroundColor: '#2a2a3a',
-          }} />
-          {/* Thumb */}
-          <div style={{
-            position: 'absolute', top: '50%', width: 40, height: 40, borderRadius: 20,
-            transform: 'translate(-50%, -50%)',
-            left: `${((crossfader + 1) / 2) * 90 + 5}%`,
-            backgroundColor: '#ffbe0b',
-            boxShadow: '0 0 10px #ffbe0b66',
-            transition: isDragging ? 'none' : 'left 0.1s',
-          }} />
-          <div style={{ position: 'absolute', bottom: 2, left: 8, fontSize: 8, color: '#00f5ff' }}>A</div>
-          <div style={{ position: 'absolute', bottom: 2, right: 8, fontSize: 8, color: '#ff006e' }}>B</div>
-        </div>
-      </div>
-
-      {/* Master volume */}
-      <div style={{ width: '100%', maxWidth: 300, marginBottom: 32 }}>
-        <div style={{ fontSize: 9, color: '#555566', textAlign: 'center', marginBottom: 8, letterSpacing: 2 }}>
-          MASTER VOL — {Math.round(volume * 100)}%
-        </div>
-        <input
-          type="range" min={0} max={1} step={0.01} value={volume}
-          onChange={(e) => {
-            const v = parseFloat(e.target.value);
-            setVolume(v);
-            sendAction('volume', v, 'master');
-          }}
-          style={{ width: '100%', accentColor: '#00f5ff', height: 8 }}
+      {/* Slide-in Pitch */}
+      {pitchDeck && (
+        <PitchSlider 
+          deckId={pitchDeck} 
+          bpm={pitchDeck === 'A' ? state.deckA.bpm : state.deckB.bpm} 
+          sendMsg={sendMsg} 
+          onClose={() => setPitchDeck(null)} 
         />
-      </div>
+      )}
 
-      {/* Effects */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', maxWidth: 300 }}>
-        {EFFECT_LABELS.map((label, i) => (
-          <button
-            key={label}
-            onTouchStart={() => toggleEffect(i)}
-            style={{
-              height: 56, borderRadius: 8, fontSize: 10, letterSpacing: 2,
-              backgroundColor: effects[i] ? `${EFFECT_COLORS[i]}33` : '#1a1a24',
-              border: `2px solid ${effects[i] ? EFFECT_COLORS[i] : '#2a2a3a'}`,
-              color: effects[i] ? EFFECT_COLORS[i] : '#555566',
-              boxShadow: effects[i] ? `0 0 12px ${EFFECT_COLORS[i]}44` : 'none',
-            }}
-          >{label}</button>
-        ))}
-      </div>
+      {/* Drawer */}
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} latency={latency} />
     </div>
   );
 }
